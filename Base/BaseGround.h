@@ -4,7 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "BaseDefinedStructs.h"
 #include "BaseGround.generated.h"
+
+
+
 
 
 UCLASS()
@@ -17,12 +21,12 @@ public:
 	ABaseGround();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UStaticMeshComponent* StaticMesh = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* Box = nullptr;
 
 	// 0:无声 1:草地  2:岩地 3:雪地 4:沙地
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FString _GroundType;
+		EGroundType GroundType = EGroundType::E_NONE;
 
 
 protected:
@@ -33,4 +37,5 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	FString GroundTypeToTableRowname();
 };

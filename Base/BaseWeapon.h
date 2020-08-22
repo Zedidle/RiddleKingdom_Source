@@ -22,16 +22,24 @@ private:
 		class USkeletalMeshComponent* SkeletalMesh;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UStaticMeshComponent* StaticMesh;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		class UBoxComponent* Box;
+
+	
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float BaseDamage = 1;
+	float WeaponCore = 1;  // 武器核心 提升所有能力加成 1 — 3
+	
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//class UBoxComponent* Box;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EWeaponType _WeaponType = EWeaponType::E_NONE;
+	float NormalAttack_DelStamina = 10;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EWeaponType WeaponType = EWeaponType::E_NONE;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FWeaponAbility Ability;
 
 protected:
 	// Called when the game starts or when spawned
@@ -47,6 +55,12 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void WeaponStopAttack();
 
+	UFUNCTION(BlueprintCallable)
+		float GetDamage();
+	UFUNCTION(BlueprintCallable)
+		bool MakeDamageToActor(AActor* Actor, float ExtraDamage);
+
+	void SetCurAbility(FCharacterAttributes Attributes);
 
 	UFUNCTION()
 	EWeaponType GetWeaponType();

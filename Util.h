@@ -3,14 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
-
-static float CalSecondValueToFrame(float SecondValue)
-{
-	
-}
-
-
+#include "TimerManager.h"
 
 /**
  * 

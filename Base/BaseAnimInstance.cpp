@@ -2,10 +2,10 @@
 
 
 #include "BaseAnimInstance.h"
-#include "Kismet\GameplayStatics.h"
+#include "Kismet/GameplayStatics.h"
 #include "BaseCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "GameFramework\CharacterMovementComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 
@@ -21,5 +21,6 @@ void UBaseAnimInstance::UpdateAnimaton()
 		Direction = this->CalculateDirection(CharacterVector, CharacterRotator);
 		Speed = UKismetMathLibrary::VSize(CharacterVector);
 		IsFalling = Character->GetCharacterMovement()->IsFalling();
+		CharacterActionActiveIndex = Character->ActionActiveIndex;
 	}
 }

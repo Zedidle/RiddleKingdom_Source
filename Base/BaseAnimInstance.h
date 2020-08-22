@@ -22,7 +22,8 @@ public:
 	float Direction;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool IsFalling;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int CharacterActionActiveIndex;
 
 public:
 
