@@ -3,14 +3,13 @@
 
 #include "BaseCharacter.h"
 #include "Components/InputComponent.h"
+#include "BaseAnimInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/BoxComponent.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "Camera/CameraComponent.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "Engine/EngineTypes.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Perception/PawnSensingComponent.h"
 #include "BaseGround.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
@@ -21,6 +20,10 @@
 #include "UObject/UObjectGlobals.h"
 #include "TimerManager.h"
 #include "BaseMonster.h"
+#include "Kismet/GameplayStatics.h"
+#include "BaseInteractive.h"
+#include "BaseNpc.h"
+#include "../Util.h"
 #include "Kismet/KismetMathLibrary.h"
 using Math = UKismetMathLibrary;
 
@@ -34,42 +37,40 @@ ABaseCharacter::ABaseCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 	GetCapsuleComponent()->SetCapsuleSize(42,96,true);
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->AirControl = 5;
-	this->bUseControllerRotationYaw = false;
-	SpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
-	SpringArm->bUsePawnControlRotation = true;
-	SpringArm->SetupAttachment(RootComponent);
-	SpringArm->TargetArmLength = 400.f;	
-	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
-	Camera->SetupAttachment(SpringArm);
-	Camera->SetRelativeLocation(FVector(80, 0, 80));
+	GetCharacterMovement()->AirControl = 0.1;
 
-
-	this->CreateFootStepBoxs();
-	this->CalBaseAbility();
-
-
-	FString Filename = "DataTable'/Game/Main/Characters/" + GetAbilityFilePrefix() + "Character/CharacterMontage_DataTable.CharacterMontage_DataTable'";
-	static ConstructorHelpers::FObjectFinder<UDataTable> MontageDataTableObject(*Filename);
-	if (MontageDataTableObject.Succeeded()) {
-		CharacterMontageDataTable = MontageDataTableObject.Object; // 角色动画蒙太奇集
-	}
+	// 攀爬的速度
+	GetCharacterMovement()->MaxFlySpeed = 200;
+	GetCharacterMovement()->BrakingDecelerationFlying = 300;
 	
+	this->bUseControllerRotationYaw = false;
+
+	CreateFootStepBoxs();
+	CalBaseAbility();
+	Faction =  EFaction::E_Character; // 设置阵营
+
+	WeaponTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Weapon_DataTable.Weapon_DataTable'"));
 
 
+	//FString Filename = "DataTable'/Game/Main/Characters/" + GetAbilityFilePrefix() + "Character/CharacterMontage_DataTable.CharacterMontage_DataTable'";
+	//static ConstructorHelpers::FObjectFinder<UDataTable> MontageDataTableObject(*Filename);
+	//if (MontageDataTableObject.Succeeded()) {
+	//	CharacterMontageDataTable = MontageDataTableObject.Object; // 角色动画蒙太奇集
+	//}
 }
 
 
 void ABaseCharacter::CalBaseAbility()
 {
-	// 应该还要额外读取存档
+	// 存档内容，尚未做
 	CurWeaponID = "1";
+	CurDeputyID = "1";
 	CurHealth = 100;
 	MaxHealth = 100;
 	HealthRegen = 1;
 	CurStamina = 100;
 	MaxStamina = 100;
-	StaminaRegen = 10;
+	StaminaRegen = 15;
 
 	Attributes.Body = 1;
 	Attributes.Power = 1;
@@ -77,83 +78,78 @@ void ABaseCharacter::CalBaseAbility()
 	Attributes.Agile = 1;
 }
 
-void ABaseCharacter::LoadWeapon()
+void ABaseCharacter::LoadEquip()
 {
+	LoadWeapon();
+	LoadDeputy();
+}
 
-	if (CurWeaponID != "0")
+void ABaseCharacter::LoadWeapon(FString WeaponID)
+{
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadWeapon WeaponID:%s"), *CurWeaponID);
+
+	if (WeaponID == "0" || !IsValid(WeaponTable)) return;
+
+	CurWeaponID = WeaponID;
+	FName RowName = FName(*CurWeaponID);
+	FString ContextString;
+	FWeapon* Row = WeaponTable->FindRow<FWeapon>(RowName, ContextString);
+
+	if (Row)
 	{
-		UDataTable* WeaponTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Weapon_DataTable.Weapon_DataTable'"));
-		UE_LOG(LogTemp, Warning, TEXT("Table->GetName: %s"), *WeaponTable->GetName());
-		FName RowName = FName(*CurWeaponID);
-		FString ContextString;
-		FWeapon* Row = WeaponTable->FindRow<FWeapon>(RowName, ContextString);
-
-		if (Row)
+		TSubclassOf<ABaseWeapon> SubWeaponClass = LoadClass<ABaseWeapon>(nullptr, *Row->WeaponActorPath);
+		UE_LOG(LogTemp, Warning, TEXT("Weapon->LoadWeapon1"));
+		if (SubWeaponClass != nullptr)
 		{
-			TSubclassOf<ABaseWeapon> SubWeaponClass = LoadClass<ABaseWeapon>(nullptr, *Row->WeaponActorPath);
-			UE_LOG(LogTemp, Warning, TEXT("Weapon->LoadWeapon1"));
-			if (SubWeaponClass != nullptr)
+			if (IsValid(Weapon)) {
+				Weapon->Destroy();
+			}
+			Weapon = GetWorld()->SpawnActor<ABaseWeapon>(SubWeaponClass);
+			if (Weapon)
 			{
-				Weapon = GetWorld()->SpawnActor<ABaseWeapon>(SubWeaponClass);
-				if (Weapon)
-				{	
-					FAttachmentTransformRules Rules = FAttachmentTransformRules(EAttachmentRule::KeepRelative, false);
-					Weapon->SetCurAbility(Attributes);
-					Weapon->AttachToComponent(GetMesh(), Rules, "WeaponHold");
-				}
+				FAttachmentTransformRules Rules = FAttachmentTransformRules(EAttachmentRule::KeepRelative, false);
+				Weapon->SetCurAbility(Attributes);
+				Weapon->AttachToComponent(GetMesh(), Rules, "WeaponHold");
+			}
+		}
+	}
+}
+
+void ABaseCharacter::LoadDeputy(FString DeputyID)
+{
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy DeputyID:%s"), *CurDeputyID);
+
+	if (DeputyID == "0") return;
+	CurDeputyID = DeputyID;
+	UDataTable* DeputyTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Deputy_DataTable.Deputy_DataTable'"));
+	FName RowName = FName(*CurDeputyID);
+	FString ContextString;
+	FDeputy* Row = DeputyTable->FindRow<FDeputy>(RowName, ContextString);
+	if (Row)
+	{
+		TSubclassOf<ABaseDeputy> SubDeputyClass = LoadClass<ABaseDeputy>(nullptr, *Row->DeputyActorPath);
+		if (SubDeputyClass != nullptr)
+		{
+			if (Deputy) {
+				Deputy->Destroy();
+			}
+			Deputy = GetWorld()->SpawnActor<ABaseDeputy>(SubDeputyClass);
+			if (Deputy)
+			{
+				FAttachmentTransformRules Rules = FAttachmentTransformRules(EAttachmentRule::KeepRelative, false);
+				Deputy->AttachToComponent(GetMesh(), Rules, "DeputyHold");
+				Deputy->SetUser(this);
 			}
 		}
 	}
 }
 
 
-void ABaseCharacter::LoadBaseHUD()
-{
-	if (BaseHUD)
-	{
-		UUserWidget* UserWidget = CreateWidget<UUserWidget>(GetWorld(), BaseHUD);
-		UserWidget->AddToViewport();
-	}
-}
 
-void ABaseCharacter::Regen(float DeltaTime)
-{
-	if (Math::InRange_FloatFloat(CurHealth, 0, MaxHealth))
-	{
-		CurHealth += HealthRegen * DeltaTime;
-		CurHealth = Math::FMin(CurHealth, MaxHealth);
-	}
-
-	if (Math::InRange_FloatFloat(CurStamina, 0, MaxStamina))
-	{
-		if (IsSprinting)
-		{
-			CurStamina -= 0.2 * StaminaRegen * DeltaTime;
-		}
-		else
-		{
-			CurStamina += StaminaRegen * DeltaTime;
-		}
-		CurStamina = Math::FMin(CurStamina, MaxStamina);
-	}
-
-	if (CurActionCold > 0)
-	{
-		CurActionCold -= DeltaTime;
-	}
-
-}
 
 bool ABaseCharacter::CanAction()
 {
-	if (CurActionCold > 0)
-	{
-		return false;
-	}
-	else
-	{
-		return true;
-	}
+	return CurActionCold <= 0;
 }
 
 void ABaseCharacter::SetCurActionCold(float num)
@@ -169,7 +165,9 @@ void ABaseCharacter::OnAttackChanged(bool Enable)
 	}
 	else
 	{	
+		CanMove = true;
 		CanAttack = true;
+		CanPlayMontage = true;
 		UWorld* World = GetWorld();
 		if (World) {
 			World->GetTimerManager().ClearTimer(ComboWaitTimer);
@@ -182,12 +180,11 @@ void ABaseCharacter::OnAttackDamageEnableChanged(bool Enable)
 {
 	if (Enable)
 	{
+		CanMove = false;
 		if (IsValid(Weapon))
 		{
 			Weapon->WeaponAttack();
 		}
-		//CanAttack = false;
-
 	}
 	else
 	{
@@ -195,7 +192,6 @@ void ABaseCharacter::OnAttackDamageEnableChanged(bool Enable)
 		{
 			Weapon->WeaponStopAttack();
 		}
-		//CanAttack = true;
 	}
 }
 
@@ -209,7 +205,74 @@ void ABaseCharacter::OnAttackComboEnableChanged(bool Enable)
 	else
 	{
 		CanCombo = false;
-		CanAttack = false;
+	}
+}
+
+
+void ABaseCharacter::OnDeputyUse(bool Enable)
+{
+	UE_LOG(LogTemp, Warning, TEXT("OnDeputyUse 0"));
+
+	if (IsValid(Deputy))
+	{
+		if (Enable)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("OnDeputyUse 1"));
+			Deputy->StartUse();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("OnDeputyUse 2"));
+			Deputy->EndUse();
+		}
+	}
+
+	//if (Enable)
+	//{
+	//	CanDeputyAttack = false;
+	//}
+	//else
+	//{
+	//	CanDeputyAttack = true;
+	//	UWorld* World = GetWorld();
+	//	if (World) {
+	//		World->GetTimerManager().ClearTimer(DeputyComboWaitTimer);
+	//		World->GetTimerManager().SetTimer(DeputyComboWaitTimer, this, &ABaseCharacter::DeputyComboTimeout, DeputyComboWaittime);
+	//	}
+	//}
+}
+
+void ABaseCharacter::OnDeputyDamageEnableChanged(bool Enable)
+{
+	UE_LOG(LogTemp, Warning, TEXT("OnDeputyDamageEnableChanged"));
+	if (Enable)
+	{
+		if (IsValid(Deputy))
+		{
+			Deputy->StartUse();
+		}
+	}
+	else
+	{
+		if (IsValid(Deputy))
+		{
+			Deputy->EndUse();
+		}
+	}
+}
+
+void ABaseCharacter::OnDeputyComboEnableChanged(bool Enable)
+{
+	UE_LOG(LogTemp, Warning, TEXT("OnDeputyComboEnableChanged"));
+
+	if (Enable)
+	{
+		CanDeputyCombo = true;
+		CanDeputyAttack = true;
+	}
+	else
+	{
+		CanDeputyCombo = false;
 	}
 }
 
@@ -218,6 +281,14 @@ void ABaseCharacter::ComboTimeout()
 	if (CanAttack)
 	{
 		ComboIndex = 0;
+	}
+}
+
+void ABaseCharacter::DeputyComboTimeout()
+{
+	if (CanDeputyAttack)
+	{
+		DeputyComboIndex = 0;
 	}
 }
 
@@ -234,171 +305,94 @@ void ABaseCharacter::DelStamina(float Stamina)
 }
 
 
-// ActiveIndex: 处于对应Montage的激活动作下标
-void ABaseCharacter::BaseAction(EActionType ActionType, int ActiveIndex)
-{
-	if (!CanAction()) return;
-	if (!CanAttack) return;
-	if (ComboIndex > 0 && !CanCombo) return;  // 未到可以连击的状态
-	SetCurActionCold(BaseAttackActionCold);
-	
-	UE_LOG(LogTemp, Warning, TEXT("CharacterMontage ComboIndex: %d"), ComboIndex);
-
-	ActionActiveIndex = ActiveIndex;
-	FString ActionTypeString = GetActionTypeString(ActionType);
-	FName RowName = *(GetWeaponMontagePrefix() + "_" + ActionTypeString);
-	FCharacterMontage* CharacterMontage = CharacterMontageDataTable->FindRow<FCharacterMontage>(RowName, TEXT("Montage"));
-	if (CharacterMontage && CharacterMontage->Montage) {
-		int32 Num = CharacterMontage->Montage->CompositeSections.Num();
-		//UE_LOG(LogTemp, Warning, TEXT("CharacterMontage: %d"), Num);
-
-		if (Num > 0 && ComboIndex < Num) {
-
-			FString SectionName = CharacterMontage->Montage->CompositeSections[ComboIndex].SectionName.ToString();
-
-			//UE_LOG(LogTemp, Warning, TEXT("SectionName: %s"), *SectionName);
-			PlayAnimMontage(CharacterMontage->Montage, 1.f, CharacterMontage->Montage->CompositeSections[ComboIndex].SectionName);
-
-			DelStamina(Weapon->NormalAttack_DelStamina);
-			ComboIndex++;
-			CanAttack = false;
-			if (ComboIndex == Num)
-			{
-				ComboIndex = 0;
-				CanCombo = false;
-			}
-		}
-	}
-}
-
-void ABaseCharacter::NormalAttack()
+void ABaseCharacter::N1Attack()
 {	
-	BaseAction(EActionType::E_NormalAttack, 1);
+	if (!IsValid(Weapon)) return;
+	if (Weapon->DelStamina > CurStamina) return;
+	FString ActionString = "N1Attack" + GetMovementModeString("_") + GetSubMovementModeString("_") + 
+		Util::GetWeaponTypeString(Weapon->WeaponType,"_");
+	if (PlayMontage(ActionString))
+	{
+		DelStamina(Weapon->DelStamina);
+	}
 }
 
 void ABaseCharacter::N2Attack()
 {
-	BaseAction(EActionType::E_N2Attack, 2);
+	if (!IsValid(Weapon)) return;
+	if (Weapon->DelStamina > CurStamina) return;
+
+	FString ActionString = "N2Attack" + GetMovementModeString("_") + GetSubMovementModeString("_") + 
+		Util::GetWeaponTypeString(Weapon->WeaponType, "_");
+	if (PlayMontage(ActionString))
+	{
+		DelStamina(Weapon->DelStamina);
+	}
 }
 
+void ABaseCharacter::UseDeputy()
+{
+	if (!IsValid( Deputy)) return;
+	if (Deputy->DelStamina > CurStamina) return;
+
+	FString ActionString = "UseDeputy" + Util::GetDeputyTypeString(Deputy->GetDeputyType(), "_");
+	if (PlayMontage(ActionString))
+	{
+		DelStamina(Deputy->DelStamina);
+	}
+}
 
 
 // Called when the game starts or when spawned
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	this->LoadBaseHUD();
-	this->LoadWeapon();
+	SetMovement(2, 2);
+	LoadEquip();
 }
 
 // Called every frame
 void ABaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	float FrameRate = 1 / DeltaTime;
-	this->ControlMovement();
-	this->Regen(DeltaTime);
-
+	if (IsDead()) return;
 }
 
-// Called to bind functionality to input
-void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ABaseCharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ABaseCharacter::StopJumping);
-	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ABaseCharacter::Sprinting);
-	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ABaseCharacter::StopSprinting);
-
-
-	PlayerInputComponent->BindAction("LeftMouse", IE_Pressed, this, &ABaseCharacter::NormalAttack);
-	PlayerInputComponent->BindAction("RightMouse", IE_Pressed, this, &ABaseCharacter::N2Attack);
-
-
-
-	PlayerInputComponent->BindAxis("MoveForward", this, &ABaseCharacter::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &ABaseCharacter::MoveRight);
-	PlayerInputComponent->BindAxis("Turn", this, &ABaseCharacter::Turn);
-	PlayerInputComponent->BindAxis("Lookup", this, &ABaseCharacter::Lookup);
-}
-
-void ABaseCharacter::ControlMovement()
-{
-	float TempSpeed = 600;
-	float RotationRate = 360;
-	if (IsSprinting)
-	{
-		TempSpeed = TempSpeed * 1.5;
-		RotationRate = RotationRate * 0.6;
-	}
-	if (!CanAttack)
-	{
-		TempSpeed = TempSpeed * 0.8;
-		RotationRate = RotationRate * 0.8;
-	}
-	if (!CanAction())
-	{
-		TempSpeed = TempSpeed * 0.5;
-		RotationRate = RotationRate * 0.7;
-	}
-	GetCharacterMovement()->MaxWalkSpeed = TempSpeed;
-	GetCharacterMovement()->RotationRate.Yaw = RotationRate;
-}
-
-void ABaseCharacter::SetCurBoss(ABaseMonster* Monster)
-{
-	CurBoss = Monster;
-}
-
-ABaseMonster* ABaseCharacter::GetCurBoss()
-{
-	return CurBoss;
-}
-
-void ABaseCharacter::Sprinting()
-{
-	IsSprinting = true;
-}
-
-void ABaseCharacter::StopSprinting()
-{
-	IsSprinting = false;
-}
 
 void ABaseCharacter::MoveForward(float Amount)
 {
-	FRotator Rotator = Math::MakeRotator(0,0, GetControlRotation().Yaw);
-	FVector ForwardVector = Math::GetForwardVector(Rotator);
-	this->AddMovementInput(ForwardVector, Amount, false);
+	Super::MoveForward(Amount);
+
 }
 
 void ABaseCharacter::MoveRight(float Amount)
 {
-	FRotator Rotator = Math::MakeRotator(0, 0, GetControlRotation().Yaw);
-	FVector RightVector = Math::GetRightVector(Rotator);
-	this->AddMovementInput(RightVector, Amount, false);
+	Super::MoveRight(Amount);
+
+
 }
  
 void ABaseCharacter::Turn(float Amount)
 {
-	this->AddControllerYawInput(Amount);
+	Super::Turn(Amount);
+	AddControllerYawInput(Amount);
 }
 
-void ABaseCharacter::Lookup(float Amount)
+void ABaseCharacter::LookUp(float Amount)
 {
-	this->AddControllerPitchInput(Amount);
+	Super::LookUp(Amount);
+	AddControllerPitchInput(Amount);
 }
 
 
 void ABaseCharacter::CreateFootStepBoxs()
 {
 	LeftFootBox = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftFootBox"));
-	_RightFootBox = CreateDefaultSubobject<UBoxComponent>(TEXT("RightFootBox"));
+	RightFootBox = CreateDefaultSubobject<UBoxComponent>(TEXT("RightFootBox"));
 	LeftFootBox->SetupAttachment(GetMesh(), FName("LeftToeBase"));
-	_RightFootBox->SetupAttachment(GetMesh(), FName("RightToeBase"));
+	RightFootBox->SetupAttachment(GetMesh(), FName("RightToeBase"));
 	LeftFootBox->OnComponentBeginOverlap.AddDynamic(this, &ABaseCharacter::PlayFootStepSound);
-	_RightFootBox->OnComponentBeginOverlap.AddDynamic(this, &ABaseCharacter::PlayFootStepSound);
+	RightFootBox->OnComponentBeginOverlap.AddDynamic(this, &ABaseCharacter::PlayFootStepSound);
 }
 
 void ABaseCharacter::PlayFootStepSound(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -411,7 +405,7 @@ void ABaseCharacter::PlayFootStepSound(UPrimitiveComponent* OverlappedComponent,
 	{
 		ABaseGround* BaseGround = Cast<ABaseGround>(OtherActor);
 
-		UDataTable* CharacterGroundSoundsTable = LoadObject<UDataTable>(NULL, TEXT("/Game/Main/Data/CharacterGroundSound_DataTable"));
+		UDataTable* CharacterGroundSoundsTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/CharacterGroundSound_DT.CharacterGroundSound_DT'"));
 		//UE_LOG(LogTemp, Warning, TEXT("Table->GetName: %s"), *BaseGround->GroundTypeToTableRowname());
 
 		FName RowName = FName(*BaseGround->GroundTypeToTableRowname());
@@ -432,6 +426,9 @@ void ABaseCharacter::PlayFootStepSound(UPrimitiveComponent* OverlappedComponent,
 }
 
 
+
+
+
 FString ABaseCharacter::GetAbilityFilePrefix()
 {
 	TMap<ECharacterAbility, FString> AbilityTypeToFilename;
@@ -442,76 +439,157 @@ FString ABaseCharacter::GetAbilityFilePrefix()
 	return AbilityTypeToFilename[AbilityType];
 }
 
-FString ABaseCharacter::GetWeaponMontagePrefix()
-{
-	TMap<EWeaponType, FString> WeaponTypeToMontagePrefix;
-	WeaponTypeToMontagePrefix.Add(EWeaponType::E_NONE, "");
-	WeaponTypeToMontagePrefix.Add(EWeaponType::E_GREATSWORD, "GreatSword");
-	WeaponTypeToMontagePrefix.Add(EWeaponType::E_SWORD, "Sword");
-	WeaponTypeToMontagePrefix.Add(EWeaponType::E_BOW, "Bow");
-	WeaponTypeToMontagePrefix.Add(EWeaponType::E_MAGIC, "Magic");
+//FString ABaseCharacter::GetWeaponTypeString(FString Prefix)
+//{
+//	if(!IsValid(Weapon)) return "";
+//
+//	TMap<EWeaponType, FString> W;
+//	W.Add(EWeaponType::E_None, "");
+//	W.Add(EWeaponType::E_GreatSword, "GreatSword");
+//	W.Add(EWeaponType::E_Sword, "Sword");
+//	W.Add(EWeaponType::E_Bow, "Bow");
+//	W.Add(EWeaponType::E_MagicWand, "MagicWand");
+//
+//	FString R = W[Weapon->GetWeaponType()];
+//	if (R != "")
+//	{
+//		R = Prefix + R;
+//	}
+//	return R;
+//}
 
-	return WeaponTypeToMontagePrefix[Weapon->GetWeaponType()];
+//FString ABaseCharacter::GetDeputyTypeString(FString Prefix)
+//{
+//	TMap<EDeputyType, FString> D;
+//	D.Add(EDeputyType::E_NONE, "");
+//	D.Add(EDeputyType::E_Shild, "Shield");
+//	D.Add(EDeputyType::E_Shild, "Shield");
+//
+//	return D[Deputy->GetDeputyType()];
+//}
 
-}
 
 FString ABaseCharacter::GetActionTypeString(EActionType ActionType)
 {
 	TMap<EActionType, FString> ActionTypeToString;
-	ActionTypeToString.Add(EActionType::E_NormalAttack, "NormalAttack");
+	ActionTypeToString.Add(EActionType::E_N1Attack, "NormalAttack");
 	ActionTypeToString.Add(EActionType::E_N2Attack, "N2Attack");
-	ActionTypeToString.Add(EActionType::E_Jump, "Jump");
+	ActionTypeToString.Add(EActionType::E_StopTurn180, "StopTurn180");
 
 	return ActionTypeToString[ActionType];
 }
 
 
 
-void ABaseCharacter::AcceptDamage(float Damage, float Penetrate)
+float ABaseCharacter::AcceptDamage(float Damage, float Penetrate)
 {
-	if(IsInvincible()) return;
-	if(IsDead()) return;
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage Damage: %f"), Damage);
-	float TrueDefense = UKismetMathLibrary::Max(Defense - Penetrate, 0);
-	float TrueDamage = Damage * 100 / (TrueDefense + 100);
-	
-	SetInvincible(0.1f);
-	if (TrueDamage > CurHealth)
-	{
-		CurHealth = 0;
-		Dead();
+	float TrueDamage = Super::AcceptDamage(Damage, Penetrate);
+	if (TrueDamage/MaxHealth > 0.05) {
+		Stiff(Math::Min(TrueDamage / MaxHealth / 0.05, 2));
 	}
-	else
-	{	
-		CurHealth -= TrueDamage;
-	}
-	BP_AcceptDamage();
+	return TrueDamage;
 }
 
 
-
-void ABaseCharacter::SetInvincible(float Time)
-{
-	UWorld* World = GetWorld();
-	if (World) {
-		if (!World->GetTimerManager().IsTimerActive(InvincibleTimer)) {
-			World->GetTimerManager().SetTimer(InvincibleTimer, Time, false);
-		}
-	}
-}
-
-bool ABaseCharacter::IsInvincible()
-{
-	UWorld* World = GetWorld();
-	return World && World->GetTimerManager().IsTimerActive(InvincibleTimer);
-}
-
-bool ABaseCharacter::IsDead()
-{
-	return CurHealth <= 0;
-}
 
 void ABaseCharacter::Dead()
 {
-	BP_Dead();
+	Super::Dead();
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::Dead"));
 }
+
+void ABaseCharacter::Stiff(float StiffMulti)
+{
+	BP_Stiff();
+	SetCurActionCold(BaseStiffToActionCold * StiffMulti);
+
+	UE_LOG(LogTemp, Warning, TEXT("StiffStiff"));
+	FString Rowname = "Stiff";
+	PlayMontage(Rowname);
+
+
+
+	//FCharacterMontage* CharacterMontage = CharacterMontageDataTable->FindRow<FCharacterMontage>(RowName, TEXT("Montage"));
+	//if (CharacterMontage && CharacterMontage->Montage) {
+	//	int32 Num = CharacterMontage->Montage->CompositeSections.Num();
+	//	//UE_LOG(LogTemp, Warning, TEXT("CharacterMontage: %d"), Num);
+	//	if (Num > 0 && StiffComboIndex < Num) {
+	//		FString SectionName = CharacterMontage->Montage->CompositeSections[StiffComboIndex].SectionName.ToString();
+
+	//		//UE_LOG(LogTemp, Warning, TEXT("SectionName: %s"), *SectionName);
+	//		PlayAnimMontage(CharacterMontage->Montage, 1.f, CharacterMontage->Montage->CompositeSections[StiffComboIndex].SectionName);
+
+	//		StiffComboIndex++;
+	//		if (StiffComboIndex == Num)
+	//		{
+	//			// 后续添加 倒地
+	//			StiffComboIndex = 0;
+	//		}
+	//	}
+	//}
+}
+
+//void ABaseCharacter::BackDilation()
+//{
+//	SetDilation(1, 1);
+//}
+
+//void ABaseCharacter::Communicate()
+//{
+//	ABaseInteractive* Interactive = Cast<ABaseInteractive>(CommunicateActor);
+//	if (Interactive)  // 可交互物体
+//	{
+//		Interactive->Communicate();
+//	}
+//	ABaseNpc* Npc = Cast<ABaseNpc>(CommunicateActor);
+//	if (Npc)
+//	{
+//		Npc->Communicate();
+//	}
+//}
+
+void ABaseCharacter::SetCommunicateActor(AActor *Actor)
+{
+	CommunicateActor = Actor;
+}
+
+bool ABaseCharacter::IsStopTurn()
+{
+
+	return false;
+	//FVector ForwardVector = Math::GetForwardVector(FRotator(0, GetActorRotation().Yaw, 0));
+	//FVector Velocity = GetVelocity();
+	//UE_LOG(LogTemp, Warning, TEXT("IsStopTurn VelocitySize: %f"), Velocity.Size());
+
+	//return (Velocity.X / ForwardVector.X < 0) && (Velocity.Y / ForwardVector.Y < 0) && Velocity.Size()>300;
+}
+
+//bool ABaseCharacter::PlayMontage(FString Rowname, FName SectionName)
+//{
+//	//if(!CanPlayMontage) return false; 
+//	UE_LOG(LogTemp, Warning, TEXT("Rowname: %s"), *Rowname);
+//	if (IsDead()) return false;
+//	if (Rowname == "")	return false;
+//
+//	FCharacterMontage* CharacterMontage = CharacterMontageDataTable->FindRow<FCharacterMontage>(*Rowname, TEXT("Montage"));
+//	if (CharacterMontage && CharacterMontage->Montage) {
+//		int32 Num = CharacterMontage->Montage->CompositeSections.Num();
+//
+//		if (Num > 0)
+//		{
+//			if (ComboIndex >= Num)
+//			{
+//				ComboIndex = 0;
+//			}
+//			if (SectionName == FName())
+//			{
+//				SectionName = CharacterMontage->Montage->CompositeSections[ComboIndex].SectionName;
+//			}
+//			PlayAnimMontage(CharacterMontage->Montage, Weapon->Ability.PlayRate, SectionName);
+//			ComboIndex++;
+//		}
+//	}
+//	return true;
+//}
+
+

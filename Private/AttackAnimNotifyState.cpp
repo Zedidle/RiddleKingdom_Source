@@ -3,6 +3,7 @@
 
 #include "AttackAnimNotifyState.h"
 #include "RPGTutorial/Base/BaseCharacter.h"
+#include "RPGTutorial/Base/BaseMonster.h"
 #include "Components/SkeletalMeshComponent.h"
 
 
@@ -11,9 +12,16 @@ void UAttackAnimNotifyState::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnim
 {
 	UE_LOG(LogTemp, Warning, TEXT("UAttackAnimNotifyState::NotifyBegin"));
 	if (MeshComp) {
-		ABaseCharacter* Owner = Cast<ABaseCharacter>(MeshComp->GetOwner());
-		if (Owner) {
-			Owner->OnAttackChanged(true);
+		ABaseCharacter* Character = Cast<ABaseCharacter>(MeshComp->GetOwner());
+		if (Character) {
+			Character->OnAttackChanged(true);
+			return;
+		}
+		ABaseMonster* Monster = Cast<ABaseMonster>(MeshComp->GetOwner());
+		if (Monster)
+		{
+			Monster->OnAttackChanged(true);
+			return;
 		}
 	}
 }
@@ -22,10 +30,16 @@ void UAttackAnimNotifyState::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSe
 {
 	UE_LOG(LogTemp, Warning, TEXT("UAttackAnimNotifyState::NotifyEnd"));
 	if (MeshComp) {
-		ABaseCharacter* Owner = Cast<ABaseCharacter>(MeshComp->GetOwner());
-		if (Owner) {
-			Owner->OnAttackChanged(false);
-
+		ABaseCharacter* Character = Cast<ABaseCharacter>(MeshComp->GetOwner());
+		if (Character) {
+			Character->OnAttackChanged(false);
+			return;
+		}
+		ABaseMonster* Monster = Cast<ABaseMonster>(MeshComp->GetOwner());
+		if (Monster)
+		{
+			Monster->OnAttackChanged(false);
+			return;
 		}
 	}
 }

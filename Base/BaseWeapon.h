@@ -14,6 +14,7 @@ class RPGTUTORIAL_API ABaseWeapon : public AActor
 
 public:
 	ABaseWeapon();
+	FWeaponAbility Ability;
 
 
 private:
@@ -22,32 +23,34 @@ private:
 		class USkeletalMeshComponent* SkeletalMesh;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UStaticMeshComponent* StaticMesh;
-
 	
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float WeaponCore = 1;  // 武器核心 提升所有能力加成 1 — 3
-	
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//class UBoxComponent* Box;
-
+	float WeaponCore = 1;  // 武器核心 提升所有能力加成 1 - 3
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float NormalAttack_DelStamina = 10;
+	float BaseDamage = 5;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EWeaponType WeaponType = EWeaponType::E_NONE;
+	float BasePlayRate = 1.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FWeaponAbility Ability;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EWeaponType WeaponType = EWeaponType::E_None;
+
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+
+
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float DelStamina = 10.f;
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void WeaponAttack();
@@ -58,7 +61,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 		float GetDamage();
 	UFUNCTION(BlueprintCallable)
-		bool MakeDamageToActor(AActor* Actor, float ExtraDamage);
+		float MakeDamageToActor(AActor* Actor, float ExtraDamage);
 
 	void SetCurAbility(FCharacterAttributes Attributes);
 

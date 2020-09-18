@@ -3,6 +3,7 @@
 
 #include "AttackComboAnimNotifyState.h"
 #include "RPGTutorial/Base/BaseCharacter.h"
+#include "RPGTutorial/Base/BaseMonster.h"
 #include "Components/SkeletalMeshComponent.h"
 
 
@@ -15,6 +16,12 @@ void UAttackComboAnimNotifyState::NotifyBegin(USkeletalMeshComponent* MeshComp, 
 		if (Owner) {
 			Owner->OnAttackComboEnableChanged(true);
 		}
+		ABaseMonster* Monster = Cast<ABaseMonster>(MeshComp->GetOwner());
+		if (Monster)
+		{
+			Monster->OnAttackComboEnableChanged(true);
+			return;
+		}
 	}
 }
 
@@ -24,7 +31,13 @@ void UAttackComboAnimNotifyState::NotifyEnd(USkeletalMeshComponent* MeshComp, UA
 	if (MeshComp) {
 		ABaseCharacter* Owner = Cast<ABaseCharacter>(MeshComp->GetOwner());
 		if (Owner) {
-			Owner->OnAttackComboEnableChanged(true);
+			Owner->OnAttackComboEnableChanged(false);
+		}
+		ABaseMonster* Monster = Cast<ABaseMonster>(MeshComp->GetOwner());
+		if (Monster)
+		{
+			Monster->OnAttackComboEnableChanged(false);
+			return;
 		}
 	}
 }
