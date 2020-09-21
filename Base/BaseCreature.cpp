@@ -6,7 +6,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
-#include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 using Math = UKismetMathLibrary;
@@ -30,14 +29,7 @@ ABaseCreature::ABaseCreature()
 
 }
 
-void ABaseCreature::LoadHUD()
-{
-	if (C_BaseHUD)
-	{
-		UUserWidget* UserWidget = CreateWidget<UUserWidget>(GetWorld(), C_BaseHUD);
-		UserWidget->AddToViewport();
-	}
-}
+
 
 void ABaseCreature::SetMovement(float SpeedMulti, float RotationRataZMulti, EMovementMode Mode)
 {
@@ -233,6 +225,7 @@ void ABaseCreature::Dead()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Dead"));
 	CurHealth = 0;
+	DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
 	PlayMontage("Dead");
 	BP_Dead();
 }
@@ -266,6 +259,8 @@ void ABaseCreature::Regen()
 
 float ABaseCreature::AcceptDamage(float Damage, float Penetrate)
 {
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::AcceptDamage Damage:%f"), Damage);
+
 	if (Damage < 0)
 	{
 		CurHealth -= Damage;
@@ -512,6 +507,11 @@ void ABaseCreature::MontageEnd(UAnimMontage* Montage, bool bInterrupted)
 float ABaseCreature::GetHealthPercent()
 {
 	return CurHealth / MaxHealth;
+}
+
+float ABaseCreature::GetStaminaPercent()
+{
+	return CurStamina / MaxStamina;
 }
 
 

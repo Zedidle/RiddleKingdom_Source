@@ -43,17 +43,20 @@ void ABaseMonster::Tick(float DeltaTime)
 void ABaseMonster::Dead()
 {
 	Super::Dead();
+	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::Dead"));
 	Target = nullptr;
 	UBaseGameInstance* GI = Cast<UBaseGameInstance>(GetGameInstance());
-	if (IsValid(GI) && MonsterType == EMonsterType::E_Boss)
+	if (IsValid(GI) && MonsterLevel == EMonsterLevel::E_Boss)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::Dead  111"));
 		GI->SetCurBoss(nullptr);
 	}
 }
 
 void ABaseMonster::OnSeePawn(APawn* Pawn)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn"));
+	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn"));
+	if (IsDead()) return;
 	ABaseCreature* C = Cast<ABaseCreature>(Pawn);
 	if (IsValid(C))
 	{
@@ -80,15 +83,18 @@ float ABaseMonster::AcceptDamage(float Damage, float Penetrate)
 	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::AcceptDamage"));
 	float TrueDamage = Super::AcceptDamage(Damage, Penetrate);
 	AngerCount += TrueDamage;
+	StiffCount += TrueDamage;
+	Stiff();
 	return TrueDamage;
 }
 
 void ABaseMonster::ActionModes()
 {
 	if(!IsValid(GetTarget())) return;  // 没有看到角色
+	if(IsDead()) return;
 	ActionInterval -= DeltaSeconds;
 
-	//UE_LOG(LogTemp, Warning, TEXT("ActionInterval: %f"), ActionInterval);
+	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::ActionModes ActionInterval: %f"), ActionInterval);
 
 	FVector DistVector = GetTarget()->GetActorLocation() - GetActorLocation();
 	float DistXY = UKismetMathLibrary::VSizeXY(DistVector); // 计算与角色的水平距离
@@ -102,7 +108,7 @@ void ABaseMonster::ActionModes()
 	if (ActionInterval < 0)  // 采取行动
 	{
 		
-		UE_LOG(LogTemp, Warning, TEXT("TakeAction"));
+		UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::ActionModes TakeAction"));
 		ActionInterval = 1;
 	}
 }
@@ -148,6 +154,18 @@ bool ABaseMonster::RotateToCharacter()
 	return false;
 }
 
+void ABaseMonster::Stiff()
+{
+	if(IsDead()) return;
+
+	if ((StiffCount / MaxHealth) > StiffSpawn)
+	{
+		PlayMontage("Stiff");
+		StiffCount = 0;
+	}
+}
+
+
 bool ABaseMonster::IsAnger()
 {
 	return (AngerCount / MaxHealth) > AngerSpawn;
@@ -157,6 +175,11 @@ void ABaseMonster::SetAngerCount(float Count)
 {
 	AngerCount = Count;
 }
+void ABaseMonster::SetStiffCount(float Count)
+{
+	StiffCount = Count;
+}
+
 
 void ABaseMonster::SetTarget(ABaseCreature* C)
 {
@@ -164,7 +187,7 @@ void ABaseMonster::SetTarget(ABaseCreature* C)
 	Super::SetTarget(C);
 	//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget 111"));
 	UBaseGameInstance* GI = Cast<UBaseGameInstance>(GetGameInstance());
-	if (IsValid(GI) && EMonsterType::E_Boss == MonsterType)
+	if (IsValid(GI) && EMonsterLevel::E_Boss == MonsterLevel)
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget 222"));
 		GI->SetCurBoss(this);

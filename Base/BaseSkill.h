@@ -13,6 +13,7 @@ class RPGTUTORIAL_API ABaseSkill : public AActor
 	
 public:	
 	ABaseSkill();
+	ABaseSkill(ESkillType Type, ABaseCreature* SkillUser, ABaseCreature* Target);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SkillCore = 1;  // 技能核心, 用于后期根据使用者的属性增加伤害
@@ -21,15 +22,17 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta = (ExposeOnSpawn = "true"))
 		ESkillType SkillType;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta = (ExposeOnSpawn = "true"))
 		ABaseCreature* SkillUser;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta = (ExposeOnSpawn = "true"))
+		ABaseCreature* Target;
 
 public:	
 	virtual void Tick(float DeltaTime) override;
 	UFUNCTION(BlueprintCallable)
-		bool MakeDamage(ABaseCreature* Target, float ExtraDamage = 0);
+		bool MakeDamage(ABaseCreature* _Target, float ExtraDamage = 0);
 	UFUNCTION(BlueprintCallable)
 		void SetSkillInfo(ESkillType Type, ABaseCreature* User);
 	UFUNCTION(BlueprintCallable)

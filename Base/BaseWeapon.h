@@ -7,6 +7,8 @@
 #include "BaseDefinedStructs.h"
 #include "BaseWeapon.generated.h"
 
+// 武器定义：只有BaseCharacter类才能使用的，附加动作、增强伤害的道具
+
 UCLASS()
 class RPGTUTORIAL_API ABaseWeapon : public AActor
 {
@@ -26,6 +28,9 @@ private:
 	
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class ABaseCharacter* User = nullptr;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float WeaponCore = 1;  // 武器核心 提升所有能力加成 1 - 3
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -61,10 +66,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 		float GetDamage();
 	UFUNCTION(BlueprintCallable)
-		float MakeDamageToActor(AActor* Actor, float ExtraDamage);
+		float MakeDamage(ABaseCreature* Target, float ExtraDamage);
 
 	void SetCurAbility(FCharacterAttributes Attributes);
 
 	UFUNCTION()
 	EWeaponType GetWeaponType();
+
+
+	UFUNCTION(BlueprintCallable)
+		void SetWeaponUser(ABaseCharacter* C);
 };

@@ -49,7 +49,6 @@ ABaseCharacter::ABaseCharacter()
 	CalBaseAbility();
 	Faction =  EFaction::E_Character; // 设置阵营
 
-	WeaponTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Weapon_DataTable.Weapon_DataTable'"));
 
 
 	//FString Filename = "DataTable'/Game/Main/Characters/" + GetAbilityFilePrefix() + "Character/CharacterMontage_DataTable.CharacterMontage_DataTable'";
@@ -80,15 +79,14 @@ void ABaseCharacter::CalBaseAbility()
 
 void ABaseCharacter::LoadEquip()
 {
-	LoadWeapon();
-	LoadDeputy();
+	LoadWeapon(CurWeaponID);
+	LoadDeputy(CurDeputyID);
 }
 
 void ABaseCharacter::LoadWeapon(FString WeaponID)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadWeapon WeaponID:%s"), *CurWeaponID);
-
 	if (WeaponID == "0" || !IsValid(WeaponTable)) return;
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadWeapon WeaponID:%s"), *CurWeaponID);
 
 	CurWeaponID = WeaponID;
 	FName RowName = FName(*CurWeaponID);
@@ -98,7 +96,7 @@ void ABaseCharacter::LoadWeapon(FString WeaponID)
 	if (Row)
 	{
 		TSubclassOf<ABaseWeapon> SubWeaponClass = LoadClass<ABaseWeapon>(nullptr, *Row->WeaponActorPath);
-		UE_LOG(LogTemp, Warning, TEXT("Weapon->LoadWeapon1"));
+		UE_LOG(LogTemp, Warning, TEXT("Weapon->LoadWeapon 111"));
 		if (SubWeaponClass != nullptr)
 		{
 			if (IsValid(Weapon)) {
@@ -109,6 +107,7 @@ void ABaseCharacter::LoadWeapon(FString WeaponID)
 			{
 				FAttachmentTransformRules Rules = FAttachmentTransformRules(EAttachmentRule::KeepRelative, false);
 				Weapon->SetCurAbility(Attributes);
+				Weapon->SetWeaponUser(this);
 				Weapon->AttachToComponent(GetMesh(), Rules, "WeaponHold");
 			}
 		}
@@ -117,11 +116,10 @@ void ABaseCharacter::LoadWeapon(FString WeaponID)
 
 void ABaseCharacter::LoadDeputy(FString DeputyID)
 {
+	//UDataTable* DeputyTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Deputy_DataTable.Deputy_DataTable'"));
+	if (DeputyID == "0" || !IsValid(DeputyTable)) return;
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy DeputyID:%s"), *CurDeputyID);
-
-	if (DeputyID == "0") return;
 	CurDeputyID = DeputyID;
-	UDataTable* DeputyTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Deputy_DataTable.Deputy_DataTable'"));
 	FName RowName = FName(*CurDeputyID);
 	FString ContextString;
 	FDeputy* Row = DeputyTable->FindRow<FDeputy>(RowName, ContextString);
@@ -347,6 +345,8 @@ void ABaseCharacter::UseDeputy()
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	//WeaponTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Weapon_DataTable.Weapon_DataTable'"));
+
 	SetMovement(2, 2);
 	LoadEquip();
 }
@@ -506,33 +506,7 @@ void ABaseCharacter::Stiff(float StiffMulti)
 	UE_LOG(LogTemp, Warning, TEXT("StiffStiff"));
 	FString Rowname = "Stiff";
 	PlayMontage(Rowname);
-
-
-
-	//FCharacterMontage* CharacterMontage = CharacterMontageDataTable->FindRow<FCharacterMontage>(RowName, TEXT("Montage"));
-	//if (CharacterMontage && CharacterMontage->Montage) {
-	//	int32 Num = CharacterMontage->Montage->CompositeSections.Num();
-	//	//UE_LOG(LogTemp, Warning, TEXT("CharacterMontage: %d"), Num);
-	//	if (Num > 0 && StiffComboIndex < Num) {
-	//		FString SectionName = CharacterMontage->Montage->CompositeSections[StiffComboIndex].SectionName.ToString();
-
-	//		//UE_LOG(LogTemp, Warning, TEXT("SectionName: %s"), *SectionName);
-	//		PlayAnimMontage(CharacterMontage->Montage, 1.f, CharacterMontage->Montage->CompositeSections[StiffComboIndex].SectionName);
-
-	//		StiffComboIndex++;
-	//		if (StiffComboIndex == Num)
-	//		{
-	//			// 后续添加 倒地
-	//			StiffComboIndex = 0;
-	//		}
-	//	}
-	//}
 }
-
-//void ABaseCharacter::BackDilation()
-//{
-//	SetDilation(1, 1);
-//}
 
 //void ABaseCharacter::Communicate()
 //{

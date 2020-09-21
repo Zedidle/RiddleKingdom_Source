@@ -32,10 +32,14 @@ public:
 	float NearTime = 0;  // 被近身时间
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ActionInterval = 4;  // 每次行动间隔
+
+	float AngerCount = 0;  // 累计伤害
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float AngerSpawn = 0.15;  // 累计伤害百分比达到愤怒,影响着怪物使用特殊技能的频率
+
+	float StiffCount = 0;  // 累计伤害
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float AngerCount = 0;  // 累计伤害
+	float StiffSpawn = 0.10;  // 累计伤害百分比达到硬直,影响着怪物受伤硬直的频率
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MonsterCore = 1;  // 怪物核心， 装载其上的额外技能的伤害基准
@@ -43,8 +47,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float BaseAttackPower;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EMonsterType MonsterType = EMonsterType::E_Normal;
-
+	EMonsterLevel MonsterLevel = EMonsterLevel::E_Normal;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EMonsterType MonsterType = EMonsterType::E_None;
 
 
 protected:
@@ -95,6 +100,13 @@ public:
 	bool IsAnger();
 	UFUNCTION(BlueprintCallable)
 	void SetAngerCount(float Count);
+
+
+	UFUNCTION(BlueprintCallable)
+		void Stiff();
+	UFUNCTION(BlueprintCallable)
+		void SetStiffCount(float Count);
+	
 
 	virtual void SetTarget(ABaseCreature* C) override;
 

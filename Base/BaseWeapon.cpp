@@ -2,6 +2,8 @@
 
 
 #include "BaseWeapon.h"
+#include "BaseCreature.h"
+#include "BaseCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
@@ -89,16 +91,16 @@ EWeaponType ABaseWeapon::GetWeaponType()
 	return WeaponType;
 }
 
-
-float ABaseWeapon::MakeDamageToActor(AActor* Actor, float ExtraDamage)
+void ABaseWeapon::SetWeaponUser(ABaseCharacter* C)
 {
-	UE_LOG(LogTemp, Warning, TEXT("MakeDamageToActor"));
-	ABaseMonster* Monster = Cast<ABaseMonster>(Actor);
-	if (Monster)
-	{
-		float Damage = GetDamage() + ExtraDamage;
-		//UE_LOG(LogTemp, Warning, TEXT("DamageToMonster AdditionDamage ： %d"), AdditionDamage);
-		return Monster->AcceptDamage(Damage);
-	}
-	return 0;
+	User = C;
+}
+
+
+float ABaseWeapon::MakeDamage(ABaseCreature* Target, float ExtraDamage)
+{
+	if(!IsValid(User)) return 0;
+	UE_LOG(LogTemp, Warning, TEXT("ABaseWeapon::MakeDamage"));
+	float Damage = GetDamage() + ExtraDamage;
+	return Target->AcceptDamage(Damage);
 }

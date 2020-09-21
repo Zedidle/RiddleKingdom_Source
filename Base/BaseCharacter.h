@@ -20,11 +20,11 @@ GENERATED_BODY()
 public:
 	ABaseCharacter();
 
-
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class UDataTable* WeaponTable = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		UDataTable* WeaponTable = nullptr;
+		class UDataTable* DeputyTable = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		AActor* CommunicateActor = nullptr;
@@ -34,9 +34,6 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class ABaseDeputy* Deputy = nullptr;
-
-	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
-	//	UDataTable* CharacterMontageDataTable;
 
 	UPROPERTY(Category = Character, EditAnywhere, BlueprintReadWrite)
 		class UBoxComponent* RightFootBox = nullptr;

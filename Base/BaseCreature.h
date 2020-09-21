@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Blueprint/UserWidget.h"
 #include "GameFramework/Character.h"
 #include "BaseDefinedStructs.h"
 #include "BaseWeapon.h"
@@ -30,13 +31,6 @@ private:
 
 
 public:
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TSubclassOf<UUserWidget> C_BaseHUD = nullptr;
-
-	UFUNCTION()
-		void LoadHUD();
-
 	UFUNCTION(BlueprintCallable)
 		void SetMovement(float SpeedMulti, float RotationRataZMulti, EMovementMode Mode = EMovementMode::MOVE_Walking);
 
@@ -153,11 +147,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EFaction Faction = EFaction::E_None;
 
+	// 战斗时是否锁定敌人
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool IsLocking = false;
 
+	// 战斗时是否给对方显示血条
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool IsLocking = false; // 战斗时是否锁定敌人
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool ShowBlood = false; // 战斗时是否给对方显示血条
+		bool ShowBlood = false;
 
 
 	// 基础生命部分
@@ -207,6 +203,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 		float GetHealthPercent();
+	UFUNCTION(BlueprintCallable)
+		float GetStaminaPercent();
+		
 	// 设置/判断 无敌
 	UFUNCTION(BlueprintCallable)
 		void SetInvincible(float Time);

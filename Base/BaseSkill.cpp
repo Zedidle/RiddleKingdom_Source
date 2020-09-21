@@ -15,6 +15,17 @@ ABaseSkill::ABaseSkill()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
+
+ABaseSkill::ABaseSkill(ESkillType Type, ABaseCreature* User, ABaseCreature* Target)
+{
+	PrimaryActorTick.bCanEverTick = true;
+	UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::ABaseSkill 222"));
+	SkillType = Type;
+	SkillUser = User;
+	Target = Target;
+}
+
+
 // Called when the game starts or when spawned
 void ABaseSkill::BeginPlay()
 {
@@ -48,12 +59,15 @@ EFaction ABaseSkill::GetFaction()
 	}
 }
 
-bool ABaseSkill::MakeDamage(ABaseCreature* Target, float ExtraDamage)
+bool ABaseSkill::MakeDamage(ABaseCreature* _Target, float ExtraDamage)
 {
 	//UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::MakeDamage"));
+	if (!IsValid(_Target))
+	{
+		_Target = Target;
+	}
 
-	if(!IsValid(Target) || Target->IsDead()) return false;
-
+	if(!IsValid(_Target) || _Target->IsDead()) return false;
 	//UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::MakeDamage 000"));
 
 	if (!IsValid(SkillUser))
@@ -63,7 +77,7 @@ bool ABaseSkill::MakeDamage(ABaseCreature* Target, float ExtraDamage)
 	}
 	//UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::MakeDamage 111"));
 
-	if (Target->Faction != GetFaction())
+	if (_Target->Faction != GetFaction())
 	{
 		float AdditionDamage = 0;
 		//UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::MakeDamage 222"));
@@ -82,7 +96,7 @@ bool ABaseSkill::MakeDamage(ABaseCreature* Target, float ExtraDamage)
 		}
 
 		float Damage = BaseDamage + ExtraDamage + AdditionDamage;
-		Target->AcceptDamage(Damage);
+		_Target->AcceptDamage(Damage);
 		return true;
 	}
 	return false;

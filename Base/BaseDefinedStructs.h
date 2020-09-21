@@ -39,8 +39,17 @@ enum class ESkillType :uint8 // 技能类型
 	E_Physics UMETA(DisplayName = "物理")
 };
 
+
 UENUM(BlueprintType)
 enum class EMonsterType :uint8 // 怪物类型
+{
+	E_None  UMETA(DisplayName = "未知"),
+	E_Troll  UMETA(DisplayName = "巨魔"),
+	E_Dragon UMETA(DisplayName = "龙族"),
+};
+
+UENUM(BlueprintType)
+enum class EMonsterLevel :uint8 // 怪物阶层
 {
 	E_Boss UMETA(DisplayName = "BOSS"), // Sword
 	E_Elite UMETA(DisplayName = "精英"),	// Bow
