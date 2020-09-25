@@ -45,6 +45,10 @@ void UBaseGameInstance::ShowCreatureHUD(bool IsShow)
 	{
 		if (IsValid(C_CreatureHUD))
 		{
+			if (IsValid(CreatureHUD))
+			{
+				CreatureHUD->RemoveFromViewport();
+			}
 			CreatureHUD = CreateWidget<UUserWidget>(GetWorld(), C_CreatureHUD);
 			CreatureHUD->AddToViewport();
 		}

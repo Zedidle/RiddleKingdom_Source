@@ -19,6 +19,10 @@ GENERATED_BODY()
 
 public:
 	ABaseCharacter();
+	class ABaseWeapon* Weapon = nullptr;
+	class ABaseDeputy* Deputy = nullptr;
+
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UDataTable* WeaponTable = nullptr;
@@ -29,11 +33,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		AActor* CommunicateActor = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		class ABaseWeapon* Weapon = nullptr;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		class ABaseDeputy* Deputy = nullptr;
+
 
 	UPROPERTY(Category = Character, EditAnywhere, BlueprintReadWrite)
 		class UBoxComponent* RightFootBox = nullptr;
@@ -93,7 +93,6 @@ protected:
 	FTimerHandle DeputyComboWaitTimer;
 	FTimerHandle StepSoundTimer;
 	FTimerHandle InvincibleTimer;
-	FTimerHandle StiffTimer;
 	
 
 public:

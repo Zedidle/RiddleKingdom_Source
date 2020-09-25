@@ -58,12 +58,12 @@ public:
 
 
 	UFUNCTION(BlueprintCallable)
-		void StartUse();
+		void UseDeputy_Start();
 	UFUNCTION(BlueprintImplementableEvent)
-		void BP_StartUse();
+		void BP_UseDeputy_Start();
 
 	UFUNCTION(BlueprintCallable)
-		void EndUse();
+		void UseDeputy_End();
 	UFUNCTION(BlueprintImplementableEvent)
-		void BP_EndUse();
+		void BP_UseDeputy_End();
 };

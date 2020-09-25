@@ -22,6 +22,7 @@
 #include "BaseMonster.h"
 #include "Kismet/GameplayStatics.h"
 #include "BaseInteractive.h"
+#include "Perception/PawnSensingComponent.h"
 #include "BaseNpc.h"
 #include "../Util.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -94,7 +95,7 @@ void ABaseCharacter::LoadWeapon(FString WeaponID)
 	FWeapon* Row = WeaponTable->FindRow<FWeapon>(RowName, ContextString);
 
 	if (Row)
-	{
+	{	
 		TSubclassOf<ABaseWeapon> SubWeaponClass = LoadClass<ABaseWeapon>(nullptr, *Row->WeaponActorPath);
 		UE_LOG(LogTemp, Warning, TEXT("Weapon->LoadWeapon 111"));
 		if (SubWeaponClass != nullptr)
@@ -107,7 +108,7 @@ void ABaseCharacter::LoadWeapon(FString WeaponID)
 			{
 				FAttachmentTransformRules Rules = FAttachmentTransformRules(EAttachmentRule::KeepRelative, false);
 				Weapon->SetCurAbility(Attributes);
-				Weapon->SetWeaponUser(this);
+				Weapon->User = this;
 				Weapon->AttachToComponent(GetMesh(), Rules, "WeaponHold");
 			}
 		}
@@ -176,19 +177,20 @@ void ABaseCharacter::OnAttackChanged(bool Enable)
 
 void ABaseCharacter::OnAttackDamageEnableChanged(bool Enable)
 {
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnDeputyComboEnableChanged"));
 	if (Enable)
 	{
 		CanMove = false;
 		if (IsValid(Weapon))
 		{
-			Weapon->WeaponAttack();
+			Weapon->UseWeapon_Start();
 		}
 	}
 	else
 	{
 		if (IsValid(Weapon))
 		{
-			Weapon->WeaponStopAttack();
+			Weapon->UseWeapon_End();
 		}
 	}
 }
@@ -215,13 +217,13 @@ void ABaseCharacter::OnDeputyUse(bool Enable)
 	{
 		if (Enable)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("OnDeputyUse 1"));
-			Deputy->StartUse();
+			UE_LOG(LogTemp, Warning, TEXT("UseDeputy_Start"));
+			Deputy->UseDeputy_Start();
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("OnDeputyUse 2"));
-			Deputy->EndUse();
+			UE_LOG(LogTemp, Warning, TEXT("UseDeputy_End"));
+			Deputy->UseDeputy_End();
 		}
 	}
 
@@ -247,21 +249,21 @@ void ABaseCharacter::OnDeputyDamageEnableChanged(bool Enable)
 	{
 		if (IsValid(Deputy))
 		{
-			Deputy->StartUse();
+			Deputy->UseDeputy_Start();
 		}
 	}
 	else
 	{
 		if (IsValid(Deputy))
 		{
-			Deputy->EndUse();
+			Deputy->UseDeputy_End();
 		}
 	}
 }
 
 void ABaseCharacter::OnDeputyComboEnableChanged(bool Enable)
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnDeputyComboEnableChanged"));
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnDeputyComboEnableChanged"));
 
 	if (Enable)
 	{
@@ -439,40 +441,10 @@ FString ABaseCharacter::GetAbilityFilePrefix()
 	return AbilityTypeToFilename[AbilityType];
 }
 
-//FString ABaseCharacter::GetWeaponTypeString(FString Prefix)
-//{
-//	if(!IsValid(Weapon)) return "";
-//
-//	TMap<EWeaponType, FString> W;
-//	W.Add(EWeaponType::E_None, "");
-//	W.Add(EWeaponType::E_GreatSword, "GreatSword");
-//	W.Add(EWeaponType::E_Sword, "Sword");
-//	W.Add(EWeaponType::E_Bow, "Bow");
-//	W.Add(EWeaponType::E_MagicWand, "MagicWand");
-//
-//	FString R = W[Weapon->GetWeaponType()];
-//	if (R != "")
-//	{
-//		R = Prefix + R;
-//	}
-//	return R;
-//}
-
-//FString ABaseCharacter::GetDeputyTypeString(FString Prefix)
-//{
-//	TMap<EDeputyType, FString> D;
-//	D.Add(EDeputyType::E_NONE, "");
-//	D.Add(EDeputyType::E_Shild, "Shield");
-//	D.Add(EDeputyType::E_Shild, "Shield");
-//
-//	return D[Deputy->GetDeputyType()];
-//}
-
-
 FString ABaseCharacter::GetActionTypeString(EActionType ActionType)
 {
 	TMap<EActionType, FString> ActionTypeToString;
-	ActionTypeToString.Add(EActionType::E_N1Attack, "NormalAttack");
+	ActionTypeToString.Add(EActionType::E_N1Attack, "N1Attack");
 	ActionTypeToString.Add(EActionType::E_N2Attack, "N2Attack");
 	ActionTypeToString.Add(EActionType::E_StopTurn180, "StopTurn180");
 
@@ -501,11 +473,8 @@ void ABaseCharacter::Dead()
 void ABaseCharacter::Stiff(float StiffMulti)
 {
 	BP_Stiff();
-	SetCurActionCold(BaseStiffToActionCold * StiffMulti);
-
-	UE_LOG(LogTemp, Warning, TEXT("StiffStiff"));
-	FString Rowname = "Stiff";
-	PlayMontage(Rowname);
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::Stiff"));
+	PlayMontage("Stiff");
 }
 
 //void ABaseCharacter::Communicate()

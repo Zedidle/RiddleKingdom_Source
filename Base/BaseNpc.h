@@ -3,21 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
+#include "BaseCreature.h"
+#include "Perception/PawnSensingComponent.h"
 #include "BaseNpc.generated.h"
 
 UCLASS()
-class RPGTUTORIAL_API ABaseNpc : public ACharacter
+class RPGTUTORIAL_API ABaseNpc : public ABaseCreature
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
 	ABaseNpc();
-
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		class ABaseCharacter* CurCharacter = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI)
+		class UPawnSensingComponent* PawnSensingComp;
 
 protected:
 	// Called when the game starts or when spawned
@@ -30,14 +29,8 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UFUNCTION(BlueprintCallable)
-	void Welcome(ABaseCharacter* Character);
-
-
-	UFUNCTION(BlueprintCallable)
-		void Communicate();
-
-	UFUNCTION(BlueprintImplementableEvent)
-		void BP_Communicate();
-
+	// 定义SeePawn的回调
+	UFUNCTION()
+		void OnSeePawn(APawn* Pawn);
 };
+

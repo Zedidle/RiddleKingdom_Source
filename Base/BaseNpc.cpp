@@ -4,11 +4,14 @@
 #include "BaseNpc.h"
 #include "BaseCharacter.h"
 
+
 // Sets default values
 ABaseNpc::ABaseNpc()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	PawnSensingComp = CreateDefaultSubobject<UPawnSensingComponent>(TEXT("PawnSensingComp"));
+	PawnSensingComp->SetPeripheralVisionAngle(80);
 
 }
 
@@ -16,6 +19,7 @@ ABaseNpc::ABaseNpc()
 void ABaseNpc::BeginPlay()
 {
 	Super::BeginPlay();
+	PawnSensingComp->OnSeePawn.AddDynamic(this, &ABaseNpc::OnSeePawn);
 	
 }
 
@@ -33,14 +37,13 @@ void ABaseNpc::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 }
 
-
-void ABaseNpc::Welcome(ABaseCharacter* Character)
+void ABaseNpc::OnSeePawn(APawn* Pawn)
 {
-	CurCharacter = Character;
+	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn"));
+	if (IsDead()) return;
+	ABaseCreature* C = Cast<ABaseCreature>(Pawn);
+	if (IsValid(C))
+	{
+		SetTarget(C);
+	}
 }
-
-void ABaseNpc::Communicate()
-{
-	BP_Communicate();
-}
-

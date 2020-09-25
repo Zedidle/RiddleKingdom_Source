@@ -18,21 +18,25 @@ class RPGTUTORIAL_API ABaseCreature : public ACharacter
 public:
 	// Sets default values for this character's properties
 	ABaseCreature();
-
-private:
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class USpringArmComponent* SpringArm = nullptr;
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* Camera = nullptr;
-
-	
-
+	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class UCreatureTracer* CreatureTracer = nullptr;
 
 
 
 public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)  // 是否作为AI
+		bool IsAI = false;
+
+
+
+
 	UFUNCTION(BlueprintCallable)
-		void SetMovement(float SpeedMulti, float RotationRataZMulti, EMovementMode Mode = EMovementMode::MOVE_Walking);
+		void SetMovement(float SpeedMulti = 2, float RotationRataZMulti = 2, EMovementMode Mode = EMovementMode::MOVE_None);
 
 	UFUNCTION(BlueprintCallable)
 		void SetDilation(float WorldScale, float SelfScale, float Time = 0.0f);
@@ -147,7 +151,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EFaction Faction = EFaction::E_None;
 
-	// 战斗时是否锁定敌人
+	// 作用仅仅是将角色和镜头的转向锁定到Target
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		bool IsLocking = false;
 
@@ -163,7 +167,11 @@ public:
 		virtual void Dead();
 	UFUNCTION(BlueprintImplementableEvent)
 		void BP_Dead();
-	
+
+	UFUNCTION(BlueprintCallable)
+		virtual void Revive();
+	UFUNCTION(BlueprintImplementableEvent)
+		void BP_Revive();
 	
 	UFUNCTION()
 		void Regen();

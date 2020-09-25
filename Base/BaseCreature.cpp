@@ -8,6 +8,7 @@
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "../ActorComponents/CreatureTracer.h"
 using Math = UKismetMathLibrary;
 
 
@@ -27,6 +28,8 @@ ABaseCreature::ABaseCreature()
 	Camera->SetupAttachment(SpringArm);
 	Camera->SetRelativeLocation(FVector(80, 0, 80));
 
+	CreatureTracer = CreateDefaultSubobject<UCreatureTracer>("CreatureTracer");
+
 }
 
 
@@ -37,6 +40,12 @@ void ABaseCreature::SetMovement(float SpeedMulti, float RotationRataZMulti, EMov
 	float Speed = BaseSpeed * SpeedMulti;
 	float RotationRateZ = BaseRotationRateZ * RotationRataZMulti;
 	GetCharacterMovement()->RotationRate.Yaw = RotationRateZ;
+
+	if (Mode == EMovementMode::MOVE_None)
+	{
+		Mode = GetCharacterMovement()->MovementMode;
+	}
+
 	switch (Mode)
 	{
 		case EMovementMode::MOVE_Walking:
@@ -225,9 +234,23 @@ void ABaseCreature::Dead()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Dead"));
 	CurHealth = 0;
-	DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
+	if (UGameplayStatics::GetPlayerCharacter(GetWorld(), 0) == this)
+	{
+		DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
+	}
 	PlayMontage("Dead");
 	BP_Dead();
+}
+
+void ABaseCreature::Revive()
+{
+	CurHealth = MaxHealth;
+	if (UGameplayStatics::GetPlayerCharacter(GetWorld(), 0) == this)
+	{
+		EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
+	}
+	GetMesh()->GetAnimInstance()->Montage_Resume(nullptr);
+	
 }
 
 
@@ -323,12 +346,12 @@ void ABaseCreature::SetClimbing(bool b)
 		if (b)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::SetClimbing T"));
-			this->SetMovement(0.8, 0, EMovementMode::MOVE_Flying);
+			SetMovement(0.8, 0, EMovementMode::MOVE_Flying);
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::SetClimbing F"));
-			this->SetMovement(2, 2, EMovementMode::MOVE_Walking);
+			SetMovement(2, 2, EMovementMode::MOVE_Walking);
 		}
 	}
 }
@@ -397,6 +420,7 @@ void ABaseCreature::UseDeputy()
 
 void ABaseCreature::Lock()
 {
+	IsLocking = !IsLocking;
 }
 
 void ABaseCreature::Dodge()

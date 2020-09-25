@@ -55,13 +55,13 @@ ABaseCreature* ABaseDeputy::GetUser()
 }
 
 // 需要通过使用者不同动作阶段触发
-void ABaseDeputy::StartUse()
+void ABaseDeputy::UseDeputy_Start()
 {
-	BP_StartUse();
+	BP_UseDeputy_Start();
 }
 
 // 需要通过使用者不同动作阶段触发
-void ABaseDeputy::EndUse()
+void ABaseDeputy::UseDeputy_End()
 {
-	BP_EndUse();
+	BP_UseDeputy_End();
 }

@@ -131,6 +131,18 @@ enum class EActionType :uint8 // 行动类型，每个角色不一定都要用�
 };
 
 
+
+USTRUCT(BlueprintType)
+struct FCreatureSaveData
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FVector WorldLocation = FVector(0, 0, 0); // 当时的世界坐标
+};
+
+
 USTRUCT(BlueprintType)
 struct FCharacterAttributes
 {

@@ -6,7 +6,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Delegates/DelegateInstancesImpl.h"
 #include "Components/InputComponent.h"
-#include "Perception/PawnSensingComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 using Math = UKismetMathLibrary;
 
@@ -94,7 +93,7 @@ void ABaseMonster::ActionModes()
 	if(IsDead()) return;
 	ActionInterval -= DeltaSeconds;
 
-	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::ActionModes ActionInterval: %f"), ActionInterval);
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::ActionModes ActionInterval: %f"), ActionInterval);
 
 	FVector DistVector = GetTarget()->GetActorLocation() - GetActorLocation();
 	float DistXY = UKismetMathLibrary::VSizeXY(DistVector); // 计算与角色的水平距离

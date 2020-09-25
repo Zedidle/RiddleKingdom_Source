@@ -37,6 +37,16 @@ void ABaseWeapon::Tick(float DeltaTime)
 
 }
 
+void ABaseWeapon::UseWeapon_Start()
+{
+	BP_UseWeapon_Start();
+}
+
+void ABaseWeapon::UseWeapon_End()
+{
+	BP_UseWeapon_End();
+}
+
 void ABaseWeapon::SetCurAbility(const FCharacterAttributes Attributes)
 {
 
@@ -89,11 +99,6 @@ float ABaseWeapon::GetDamage()
 EWeaponType ABaseWeapon::GetWeaponType()
 {
 	return WeaponType;
-}
-
-void ABaseWeapon::SetWeaponUser(ABaseCharacter* C)
-{
-	User = C;
 }
 
 

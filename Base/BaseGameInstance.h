@@ -22,9 +22,6 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 
 	class UUserWidget* CreatureHUD = nullptr;
 
-
-
-
 	public:
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
 			TSubclassOf<UUserWidget> C_CreatureHUD = nullptr;

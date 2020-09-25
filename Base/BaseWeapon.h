@@ -28,7 +28,7 @@ private:
 	
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn = "true"))
 	class ABaseCharacter* User = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -57,11 +57,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float DelStamina = 10.f;
 
+	UFUNCTION(BlueprintCallable)
+	void UseWeapon_Start();
 	UFUNCTION(BlueprintImplementableEvent)
-	void WeaponAttack();
+	void BP_UseWeapon_Start();
 
+	UFUNCTION(BlueprintCallable)
+	void UseWeapon_End();
 	UFUNCTION(BlueprintImplementableEvent)
-	void WeaponStopAttack();
+	void BP_UseWeapon_End();
 
 	UFUNCTION(BlueprintCallable)
 		float GetDamage();
@@ -72,8 +76,4 @@ public:
 
 	UFUNCTION()
 	EWeaponType GetWeaponType();
-
-
-	UFUNCTION(BlueprintCallable)
-		void SetWeaponUser(ABaseCharacter* C);
 };
