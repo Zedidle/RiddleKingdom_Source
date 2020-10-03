@@ -48,8 +48,6 @@ public:
 	float BaseAttackPower;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EMonsterLevel MonsterLevel = EMonsterLevel::E_Normal;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EMonsterType MonsterType = EMonsterType::E_None;
 
 
 protected:

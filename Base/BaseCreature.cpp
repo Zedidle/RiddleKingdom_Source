@@ -8,6 +8,7 @@
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "../Util.h"
 #include "../ActorComponents/CreatureTracer.h"
 using Math = UKismetMathLibrary;
 
@@ -27,6 +28,7 @@ ABaseCreature::ABaseCreature()
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->SetupAttachment(SpringArm);
 	Camera->SetRelativeLocation(FVector(80, 0, 80));
+
 
 	CreatureTracer = CreateDefaultSubobject<UCreatureTracer>("CreatureTracer");
 
@@ -95,7 +97,10 @@ void ABaseCreature::InitDilation()
 void ABaseCreature::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	ComboIndex.Add("N1Attack", 0);
+	ComboIndex.Add("N2Attack", 0);
+	ComboIndex.Add("Jump", 0);
+	ComboIndex.Add("Stiff", 0);
 }
 
 // Called every frame
@@ -148,6 +153,8 @@ void ABaseCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction("UseDeputy", IE_Pressed, this, &ABaseCreature::UseDeputy);
 
 	PlayerInputComponent->BindAction("Communicate", IE_Pressed, this, &ABaseCreature::Communicate);
+	PlayerInputComponent->BindAction("Communicate", IE_Released, this, &ABaseCreature::StopCommunicate);
+
 
 	PlayerInputComponent->BindAction("Lock", IE_Pressed, this, &ABaseCreature::Lock);
 	PlayerInputComponent->BindAction("Dodge", IE_Pressed, this, &ABaseCreature::Dodge);
@@ -244,13 +251,14 @@ void ABaseCreature::Dead()
 
 void ABaseCreature::Revive()
 {
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Revive"));
 	CurHealth = MaxHealth;
 	if (UGameplayStatics::GetPlayerCharacter(GetWorld(), 0) == this)
 	{
 		EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
 	}
 	GetMesh()->GetAnimInstance()->Montage_Resume(nullptr);
-	
+	PlayMontage("Revive");
 }
 
 
@@ -382,13 +390,16 @@ FString ABaseCreature::GetSubMovementModeString(FString Prefix)
 void ABaseCreature::JumpPress()
 {
 		BP_JumpPress();
+		FString ActionString = "Jump" + GetMovementModeString("_") + GetSubMovementModeString("_");
 		Jump();
+		PlayMontage(ActionString);
 		FallingTime = 0;
 }
 
 void ABaseCreature::Sprinting()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Sprinting"));
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Sprinting"));
+	if (GetMesh()->GetAnimInstance()->IsAnyMontagePlaying()) return;
 	IsSprinting = true;
 	if(IsGround())
 	{
@@ -398,11 +409,11 @@ void ABaseCreature::Sprinting()
 
 void ABaseCreature::StopSprinting()
 {
-	UE_LOG(LogTemp, Warning, TEXT("StopSprinting"));
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::StopSprinting"));
 	IsSprinting = false;
 	if (IsGround())
 	{
-		SetMovement(2, 1.5);
+		SetMovement(2, 2);
 	}
 }
 
@@ -454,8 +465,17 @@ void ABaseCreature::Dodge()
 
 void ABaseCreature::Communicate()
 {
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Communicate"));
 	BP_Communicate();
 }
+
+void ABaseCreature::StopCommunicate()
+{
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::StopCommunicate"));
+	BP_StopCommunicate();
+}
+
+
 
 void ABaseCreature::MoveForward(float Amount)
 {
@@ -515,15 +535,12 @@ void ABaseCreature::LookUp(float Amount)
 void ABaseCreature::MontageStart(UAnimMontage* Montage)
 {
 	UE_LOG(LogTemp, Warning, TEXT("MontageStart"));
-	CanPlayMontage = false;
-
 	BP_MontageStart(Montage);
 }
 
 void ABaseCreature::MontageEnd(UAnimMontage* Montage, bool bInterrupted)
 {
 	UE_LOG(LogTemp, Warning, TEXT("MontageEnd"));
-	CanPlayMontage = true;
 	BP_MontageEnd(Montage, bInterrupted);
 }
 
@@ -565,31 +582,56 @@ ABaseCreature* ABaseCreature::GetTarget()
 
 
 
-bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName, float PlayRate)
+bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName,  float PlayRate)
 {
-	//if(!CanPlayMontage) return false; 
+	if(!CanAction) return false;
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage Rowname: %s"), *Rowname);
 	if (Rowname == "")	return false;
-	if (Rowname!="Dead" && IsDead()) return false;
+	TArray<FString> MontageCanPlayDead = {"Dead", "Revive"};
+	if (!MontageCanPlayDead.Contains(Rowname) && IsDead()) return false;
 	if (!IsValid(CreatureMontageDataTable)) return false;
+	int _Index = Rowname.Find("_");
+	FString ActionName;
+	if (_Index > -1)
+	{
+		ActionName = Rowname.Left(_Index);
+	}
+	else
+	{
+		ActionName = Rowname;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage ActionName: %s"), *ActionName);
 
 	FCreatureMontage* CreatureMontage = CreatureMontageDataTable->FindRow<FCreatureMontage>(*Rowname, TEXT("Montage"));
 	if (CreatureMontage && CreatureMontage->Montage) {
 		int32 Num = CreatureMontage->Montage->CompositeSections.Num();
+		UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage Num: %d"), Num);
 
 		if (Num > 0)
 		{
-			if (ComboIndex >= Num)
+			int32 Index = 0;
+			if (ComboIndex.Contains(ActionName))
 			{
-				ComboIndex = 0;
+				Index = ComboIndex[ActionName]++;
+				if (ComboIndex[ActionName] >= Num)
+				{
+					ComboIndex[ActionName] = 0;
+				}
+				UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage 000 Index: %d"), Index);
+				if (Index >= Num)
+				{
+					Index = 0;
+				}
+				UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage 111 Index: %d"), Index);
 			}
+
 			if (SectionName == "")
 			{
-				SectionName = CreatureMontage->Montage->CompositeSections[ComboIndex].SectionName.ToString();
+				SectionName = CreatureMontage->Montage->CompositeSections[Index].SectionName.ToString();
 			}
 			PlayAnimMontage(CreatureMontage->Montage, PlayRate, *SectionName);
-			ComboIndex++;
+			return true;
 		}
 	}
-	return true;
+	return false;
 }

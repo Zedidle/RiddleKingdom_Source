@@ -3,6 +3,7 @@
 
 #include "CreatureTracer.h"
 #include "../Base/BaseCreature.h"
+#include "../Base/BaseEquip.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -46,14 +47,20 @@ void UCreatureTracer::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 void UCreatureTracer::OnHit(bool IsHit)
 {
-	if(!IsHit) return;
 	//UE_LOG(LogTemp, Warning, TEXT("UCreatureTracer::OnHit"));
-	class ABaseCreature* C = Cast<ABaseCreature>(HitResult.Actor);
-	if(IsValid(C))
+	if (!IsHit)
 	{
-		Owner->SetTarget(C);
+		Creature = nullptr;
+		Equip = nullptr;
 	}
-
-
+	else
+	{
+		Creature = Cast<ABaseCreature>(HitResult.Actor);
+		if (IsValid(Creature))
+		{
+			Owner->SetTarget(Creature);
+		}
+		Equip = Cast<ABaseEquip>(HitResult.Actor);
+	}
 }
 

@@ -8,6 +8,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "BaseMonster.h"
+#include "BaseEquip.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "../Util.h"
 

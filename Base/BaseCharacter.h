@@ -12,6 +12,7 @@
 
 
 
+
 UCLASS()
 class RPGTUTORIAL_API ABaseCharacter : public ABaseCreature
 {
@@ -19,47 +20,22 @@ GENERATED_BODY()
 
 public:
 	ABaseCharacter();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class ABaseWeapon* Weapon = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class ABaseDeputy* Deputy = nullptr;
 
-
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		class UDataTable* WeaponTable = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		class UDataTable* DeputyTable = nullptr;
+	class UDataTable* WeaponTable = nullptr;
+	class UDataTable* DeputyTable = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		AActor* CommunicateActor = nullptr;
-
-
 
 	UPROPERTY(Category = Character, EditAnywhere, BlueprintReadWrite)
 		class UBoxComponent* RightFootBox = nullptr;
 
 	UPROPERTY(Category = Character, EditAnywhere, BlueprintReadWrite)
 		class UBoxComponent* LeftFootBox = nullptr;
-
-private:
-	// 战斗部分
-	//int ComboIndex = 0;
-	float CurActionCold = 0;
-
-	bool CanMove = true;
-	bool CanAttack = true; // 处于不同场合或动作判定是否可以攻击
-	bool CanPlayMontage = true;  // 是否可以播放蒙太奇
-
-	bool CanCombo = false;  // 是否可以连击
-
-	int DeputyComboIndex = 0;
-	bool CanDeputyAttack = true; // 是否能够使用副手
-	bool CanDeputyCombo = false;
-
-	int StiffComboIndex = 0; // 被Combo到N次时,动作不一样（可能倒地）
-
-	class ABaseMonster *CurBoss;
-
 
 
 private:
@@ -70,20 +46,6 @@ private:
 	virtual void MoveRight(float Amount) override;
 	virtual void Turn(float Amount) override;
 	virtual void LookUp(float Amount) override;
-
-
-
-	UFUNCTION()
-	FString GetAbilityFilePrefix();
-	//UFUNCTION()
-	//FString GetWeaponTypeString(FString Prefix = "");
-	//UFUNCTION()
-	//FString GetDeputyTypeString(FString Prefix = "");
-	UFUNCTION()
-	FString GetActionTypeString(EActionType ActionType);
-
-
-
 
 
 protected:
@@ -150,23 +112,17 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void LoadDeputy(FString DeputyID = "0");
 
-
-	UFUNCTION()
-	bool CanAction();
-	
-	UFUNCTION()
-	void SetCurActionCold(float num);
-
 	
 	UFUNCTION()
 	void OnAttackChanged(bool Enable);
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_OnAttackChanged(bool Enable);
 	UFUNCTION()
 	void OnAttackDamageEnableChanged(bool Enable);
 	UFUNCTION()
 	void OnAttackComboEnableChanged(bool Enable);
 
 	UFUNCTION()
-		//void OnDeputyChanged(bool Enable);
 		void OnDeputyUse(bool Enable);
 	UFUNCTION()
 		void OnDeputyDamageEnableChanged(bool Enable);
@@ -202,6 +158,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 		bool IsStopTurn();
+
+	UFUNCTION(BlueprintCallable)
+		bool AbilityCanUseWeaponType(EWeaponType WeaponType);
 
 };
 

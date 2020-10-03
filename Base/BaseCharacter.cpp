@@ -50,13 +50,6 @@ ABaseCharacter::ABaseCharacter()
 	CalBaseAbility();
 	Faction =  EFaction::E_Character; // 设置阵营
 
-
-
-	//FString Filename = "DataTable'/Game/Main/Characters/" + GetAbilityFilePrefix() + "Character/CharacterMontage_DataTable.CharacterMontage_DataTable'";
-	//static ConstructorHelpers::FObjectFinder<UDataTable> MontageDataTableObject(*Filename);
-	//if (MontageDataTableObject.Succeeded()) {
-	//	CharacterMontageDataTable = MontageDataTableObject.Object; // 角色动画蒙太奇集
-	//}
 }
 
 
@@ -112,12 +105,12 @@ void ABaseCharacter::LoadWeapon(FString WeaponID)
 				Weapon->AttachToComponent(GetMesh(), Rules, "WeaponHold");
 			}
 		}
+
 	}
 }
 
 void ABaseCharacter::LoadDeputy(FString DeputyID)
 {
-	//UDataTable* DeputyTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Deputy_DataTable.Deputy_DataTable'"));
 	if (DeputyID == "0" || !IsValid(DeputyTable)) return;
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy DeputyID:%s"), *CurDeputyID);
 	CurDeputyID = DeputyID;
@@ -137,7 +130,7 @@ void ABaseCharacter::LoadDeputy(FString DeputyID)
 			{
 				FAttachmentTransformRules Rules = FAttachmentTransformRules(EAttachmentRule::KeepRelative, false);
 				Deputy->AttachToComponent(GetMesh(), Rules, "DeputyHold");
-				Deputy->SetUser(this);
+				Deputy->User = this;
 			}
 		}
 	}
@@ -145,34 +138,22 @@ void ABaseCharacter::LoadDeputy(FString DeputyID)
 
 
 
-
-bool ABaseCharacter::CanAction()
-{
-	return CurActionCold <= 0;
-}
-
-void ABaseCharacter::SetCurActionCold(float num)
-{
-	CurActionCold = num;
-}
-
 void ABaseCharacter::OnAttackChanged(bool Enable)
 {
 	if (Enable)
 	{
-		CanAttack = false;
+		CanAction = false;
 	}
 	else
 	{	
-		CanMove = true;
-		CanAttack = true;
-		CanPlayMontage = true;
+		CanAction = true;
 		UWorld* World = GetWorld();
 		if (World) {
 			World->GetTimerManager().ClearTimer(ComboWaitTimer);
 			World->GetTimerManager().SetTimer(ComboWaitTimer, this, &ABaseCharacter::ComboTimeout, ComboWaittime);
 		}
 	}
+	BP_OnAttackChanged(Enable);
 }
 
 void ABaseCharacter::OnAttackDamageEnableChanged(bool Enable)
@@ -180,7 +161,6 @@ void ABaseCharacter::OnAttackDamageEnableChanged(bool Enable)
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnDeputyComboEnableChanged"));
 	if (Enable)
 	{
-		CanMove = false;
 		if (IsValid(Weapon))
 		{
 			Weapon->UseWeapon_Start();
@@ -197,21 +177,12 @@ void ABaseCharacter::OnAttackDamageEnableChanged(bool Enable)
 
 void ABaseCharacter::OnAttackComboEnableChanged(bool Enable)
 {
-	if (Enable)
-	{
-		CanCombo = true;
-		CanAttack = true;
-	}
-	else
-	{
-		CanCombo = false;
-	}
 }
 
 
 void ABaseCharacter::OnDeputyUse(bool Enable)
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnDeputyUse 0"));
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnDeputyUse"));
 
 	if (IsValid(Deputy))
 	{
@@ -226,70 +197,24 @@ void ABaseCharacter::OnDeputyUse(bool Enable)
 			Deputy->UseDeputy_End();
 		}
 	}
-
-	//if (Enable)
-	//{
-	//	CanDeputyAttack = false;
-	//}
-	//else
-	//{
-	//	CanDeputyAttack = true;
-	//	UWorld* World = GetWorld();
-	//	if (World) {
-	//		World->GetTimerManager().ClearTimer(DeputyComboWaitTimer);
-	//		World->GetTimerManager().SetTimer(DeputyComboWaitTimer, this, &ABaseCharacter::DeputyComboTimeout, DeputyComboWaittime);
-	//	}
-	//}
 }
 
 void ABaseCharacter::OnDeputyDamageEnableChanged(bool Enable)
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnDeputyDamageEnableChanged"));
-	if (Enable)
-	{
-		if (IsValid(Deputy))
-		{
-			Deputy->UseDeputy_Start();
-		}
-	}
-	else
-	{
-		if (IsValid(Deputy))
-		{
-			Deputy->UseDeputy_End();
-		}
-	}
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnDeputyDamageEnableChanged"));
 }
 
 void ABaseCharacter::OnDeputyComboEnableChanged(bool Enable)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnDeputyComboEnableChanged"));
-
-	if (Enable)
-	{
-		CanDeputyCombo = true;
-		CanDeputyAttack = true;
-	}
-	else
-	{
-		CanDeputyCombo = false;
-	}
 }
 
 void ABaseCharacter::ComboTimeout()
 {
-	if (CanAttack)
-	{
-		ComboIndex = 0;
-	}
 }
 
 void ABaseCharacter::DeputyComboTimeout()
 {
-	if (CanDeputyAttack)
-	{
-		DeputyComboIndex = 0;
-	}
 }
 
 void ABaseCharacter::DelHealth(float Health)
@@ -307,10 +232,17 @@ void ABaseCharacter::DelStamina(float Stamina)
 
 void ABaseCharacter::N1Attack()
 {	
-	if (!IsValid(Weapon)) return;
+	if (!IsValid(Weapon))
+	{
+		PlayMontage("N1Attack");
+		return;
+	}
 	if (Weapon->DelStamina > CurStamina) return;
 	FString ActionString = "N1Attack" + GetMovementModeString("_") + GetSubMovementModeString("_") + 
 		Util::GetWeaponTypeString(Weapon->WeaponType,"_");
+
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::N1Attack: %s"), *ActionString);
+
 	if (PlayMontage(ActionString))
 	{
 		DelStamina(Weapon->DelStamina);
@@ -319,7 +251,11 @@ void ABaseCharacter::N1Attack()
 
 void ABaseCharacter::N2Attack()
 {
-	if (!IsValid(Weapon)) return;
+	if (!IsValid(Weapon))
+	{
+		PlayMontage("N2Attack");
+		return;
+	}
 	if (Weapon->DelStamina > CurStamina) return;
 
 	FString ActionString = "N2Attack" + GetMovementModeString("_") + GetSubMovementModeString("_") + 
@@ -347,9 +283,10 @@ void ABaseCharacter::UseDeputy()
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	//WeaponTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Weapon_DataTable.Weapon_DataTable'"));
-
 	SetMovement(2, 2);
+
+	WeaponTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Weapon_DataTable.Weapon_DataTable'"));
+	DeputyTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Deputy_DataTable.Deputy_DataTable'"));
 	LoadEquip();
 }
 
@@ -428,40 +365,14 @@ void ABaseCharacter::PlayFootStepSound(UPrimitiveComponent* OverlappedComponent,
 }
 
 
-
-
-
-FString ABaseCharacter::GetAbilityFilePrefix()
-{
-	TMap<ECharacterAbility, FString> AbilityTypeToFilename;
-	AbilityTypeToFilename.Add(ECharacterAbility::E_SWORD, "Sword");
-	AbilityTypeToFilename.Add(ECharacterAbility::E_BOW, "Bow");
-	AbilityTypeToFilename.Add(ECharacterAbility::E_MAGIC, "Magic");
-
-	return AbilityTypeToFilename[AbilityType];
-}
-
-FString ABaseCharacter::GetActionTypeString(EActionType ActionType)
-{
-	TMap<EActionType, FString> ActionTypeToString;
-	ActionTypeToString.Add(EActionType::E_N1Attack, "N1Attack");
-	ActionTypeToString.Add(EActionType::E_N2Attack, "N2Attack");
-	ActionTypeToString.Add(EActionType::E_StopTurn180, "StopTurn180");
-
-	return ActionTypeToString[ActionType];
-}
-
-
-
 float ABaseCharacter::AcceptDamage(float Damage, float Penetrate)
 {
 	float TrueDamage = Super::AcceptDamage(Damage, Penetrate);
-	if (TrueDamage/MaxHealth > 0.05) {
-		Stiff(Math::Min(TrueDamage / MaxHealth / 0.05, 2));
+	if (TrueDamage/MaxHealth > StiffPercent) {
+		Stiff(Math::Min(TrueDamage / MaxHealth / StiffPercent, 2));
 	}
 	return TrueDamage;
 }
-
 
 
 void ABaseCharacter::Dead()
@@ -498,7 +409,6 @@ void ABaseCharacter::SetCommunicateActor(AActor *Actor)
 
 bool ABaseCharacter::IsStopTurn()
 {
-
 	return false;
 	//FVector ForwardVector = Math::GetForwardVector(FRotator(0, GetActorRotation().Yaw, 0));
 	//FVector Velocity = GetVelocity();
@@ -507,32 +417,8 @@ bool ABaseCharacter::IsStopTurn()
 	//return (Velocity.X / ForwardVector.X < 0) && (Velocity.Y / ForwardVector.Y < 0) && Velocity.Size()>300;
 }
 
-//bool ABaseCharacter::PlayMontage(FString Rowname, FName SectionName)
-//{
-//	//if(!CanPlayMontage) return false; 
-//	UE_LOG(LogTemp, Warning, TEXT("Rowname: %s"), *Rowname);
-//	if (IsDead()) return false;
-//	if (Rowname == "")	return false;
-//
-//	FCharacterMontage* CharacterMontage = CharacterMontageDataTable->FindRow<FCharacterMontage>(*Rowname, TEXT("Montage"));
-//	if (CharacterMontage && CharacterMontage->Montage) {
-//		int32 Num = CharacterMontage->Montage->CompositeSections.Num();
-//
-//		if (Num > 0)
-//		{
-//			if (ComboIndex >= Num)
-//			{
-//				ComboIndex = 0;
-//			}
-//			if (SectionName == FName())
-//			{
-//				SectionName = CharacterMontage->Montage->CompositeSections[ComboIndex].SectionName;
-//			}
-//			PlayAnimMontage(CharacterMontage->Montage, Weapon->Ability.PlayRate, SectionName);
-//			ComboIndex++;
-//		}
-//	}
-//	return true;
-//}
-
+bool ABaseCharacter::AbilityCanUseWeaponType(EWeaponType WeaponType)
+{
+	return Util::AbilityCanUseWeaponType(AbilityType, WeaponType);
+}
 

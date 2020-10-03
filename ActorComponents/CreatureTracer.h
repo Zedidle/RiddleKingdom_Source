@@ -17,6 +17,14 @@ public:
 	// Sets default values for this component's properties
 	UCreatureTracer();
 	class ABaseCreature* Owner;
+
+	UPROPERTY(BlueprintReadOnly)
+	class ABaseCreature* Creature = nullptr;
+	UPROPERTY(BlueprintReadOnly)
+	class ABaseEquip* Equip = nullptr;
+
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TEnumAsByte<ETraceTypeQuery> TraceChannel = ETraceTypeQuery::TraceTypeQuery1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -27,7 +35,8 @@ public:
 
 	FHitResult HitResult;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float TraceLength = 1000;
+	float TraceLength = 5000;
+
 
 
 

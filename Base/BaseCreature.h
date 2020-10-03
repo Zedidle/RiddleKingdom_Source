@@ -10,6 +10,21 @@
 #include "BaseDeputy.h"
 #include "BaseCreature.generated.h"
 
+
+
+//USTRUCT()
+//struct FComboIndex
+//{
+//	GENERATED_BODY()
+//
+//public:
+//	int N1Attack = 0;
+//	int N2Attack = 0;
+//	int Jump = 0;
+//	int Stiff = 0;
+//};
+
+
 UCLASS()
 class RPGTUTORIAL_API ABaseCreature : public ACharacter
 {
@@ -25,14 +40,18 @@ public:
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UCreatureTracer* CreatureTracer = nullptr;
 
+	//FComboIndex ComboIndex;
+	TMap<FString, int> ComboIndex;
 
 
 public:
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)  // 是否作为AI
+	// 是否作为AI
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) 
 		bool IsAI = false;
 
-
+	// 当承受伤害大于生命百分比（StiffPercent）时，触发硬直动作
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float StiffPercent = 0.05; 
 
 
 	UFUNCTION(BlueprintCallable)
@@ -74,6 +93,10 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 		void BP_Communicate();
 	UFUNCTION()
+		virtual void StopCommunicate();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+		void BP_StopCommunicate();
+	UFUNCTION()
 		virtual void MoveForward(float Amount);
 	UFUNCTION(BlueprintImplementableEvent)
 		void BP_MoveForward(float Amount);
@@ -91,17 +114,19 @@ public:
 		virtual void LookUp(float Amount);
 
 protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class ABaseCreature* Target = nullptr;
 
-	// 基础变量设置
-	float DeltaSeconds;  // 当前帧时
+	class ABaseWeapon* TargetWeapon = nullptr;
 
-	// 战斗部分
-	int ComboIndex = 0;
+	// 基础变量设置
+	UPROPERTY(BlueprintReadOnly)
+	float DeltaSeconds;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool IsSprinting = false;
 
-	bool CanPlayMontage = true;
+	bool CanAction = true; // 处于不同场合或动作判定是否可以攻击
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -142,6 +167,14 @@ protected:
 
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString CreatureID = "000";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString CreatureName = "CreatureName";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FCreatureType CreatureType = FCreatureType::E_None;
+
+
 	// 运动部分
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float BaseSpeed = 300;
@@ -159,6 +192,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		bool ShowBlood = false;
 
+	// 是否显示状态栏，影响复活后的角色界面，也是可以直接绑定。
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool ShowHUD = true;
 
 	// 基础生命部分
 	UFUNCTION(BlueprintCallable)
@@ -241,17 +277,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 	UFUNCTION(BlueprintCallable)
 		EDistance GetDistanceTypeToTarget();
 
@@ -276,9 +301,13 @@ public:
 		void BP_DA_FLAT_SFAR();
 
 
-
-
 	UFUNCTION(BlueprintCallable)
 		bool PlayMontage(FString Rowname, FString SectionName = "", float PlayRate=1.0f);
+
+
+
+
+
+
 
 };

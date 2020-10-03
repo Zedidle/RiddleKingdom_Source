@@ -6,8 +6,11 @@
 #include "Engine/UserDefinedStruct.h"
 #include "Engine/DataTable.h"
 #include "Kismet/KismetSystemLibrary.h"
-
 #include "BaseDefinedStructs.generated.h"
+
+
+
+
 
 
 UENUM(BlueprintType)
@@ -41,11 +44,13 @@ enum class ESkillType :uint8 // 技能类型
 
 
 UENUM(BlueprintType)
-enum class EMonsterType :uint8 // 怪物类型
+enum class FCreatureType :uint8 // 怪物类型
 {
-	E_None  UMETA(DisplayName = "未知"),
-	E_Troll  UMETA(DisplayName = "巨魔"),
-	E_Dragon UMETA(DisplayName = "龙族"),
+	E_None  UMETA(DisplayName = "未知", ShortToolTip = "None"),
+	E_Human  UMETA(DisplayName = "人族", ShortToolTip = "Human"),
+	E_Troll  UMETA(DisplayName = "巨魔", ShortToolTip = "Troll"),
+	E_Dragon UMETA(DisplayName = "龙族", ShortToolTip = "Dragon"),
+	E_Goblin UMETA(DisplayName = "妖精", ShortToolTip = "Goblin"),
 };
 
 UENUM(BlueprintType)
@@ -74,15 +79,22 @@ enum class EGroundType :uint8 // 地面类型
 	E_SAND UMETA(DisplayName = "沙地")
 };
 
+
+// 行动类型，每个角色不一定都要用到.. 可随时调整。 这里的内容并不重要，只是用作参考，后期再考虑用Enum写法代替FString.
 UENUM(BlueprintType)
-enum class EActionType :uint8 // 行动类型，每个角色不一定都要用到.. 可随时调整
+enum class EActionType :uint8 
 {
 
 	// 结构定义: E_操作_状态_子状态
 	// 运动状态不写默认为地面
+
 	// 基础通用
 	E_Dead UMETA(DisplayName = "Dead"),
+	E_Revive UMETA(DisplayName = "Revive"),
 	E_TakeOff UMETA(DisplayName = "TakeOff"),
+	E_Jump_Sprint UMETA(DisplayName = "Jump_Sprint"),
+	E_Jump_Air UMETA(DisplayName = "Jump_Air"),
+	E_Jump_Air_Sprint UMETA(DisplayName = "Jump_Air_Sprint"),
 	E_Jump_FaceWall_Sprint UMETA(DisplayName = "Jump_FaceWall_Sprint"),
 	E_Jump_FaceWall UMETA(DisplayName = "Jump_FaceWall"),
 	E_Ledge_Climbing UMETA(DisplayName = "Ledge_Climbing"),
@@ -91,13 +103,21 @@ enum class EActionType :uint8 // 行动类型，每个角色不一定都要用�
 	E_Dodge UMETA(DisplayName = "Dodge"),
 	E_HighFall UMETA(DisplayName = "HighFall"),
 
+
+
+
+
 	// 各类副手
 	E_UseDeputy_Shield UMETA(DisplayName = "UseDeputy_Shield"),
 	E_UseDeputy_Dagger UMETA(DisplayName = "UseDeputy_Dagger"),
 
 
+
+
 	// 结构定义: E_操作_运动状态_运动子状态_武器类型
 	// 运动状态不写默认为地面, 运动子状态不写默认为无，武器类型不写默认为无
+	
+
 
 	// 无主手
 	E_N1Attack UMETA(DisplayName = "N1Attack"),
@@ -109,6 +129,9 @@ enum class EActionType :uint8 // 行动类型，每个角色不一定都要用�
 	E_N1Attack_Air_Sprint UMETA(DisplayName = "N1Attack_Air_Sprint"),
 	E_N2Attack_Air_Sprint UMETA(DisplayName = "N2Attack_Air_Sprint"),
 
+
+
+
 	// 主手 - GreatSword
 	E_N1Attack_GreatSword UMETA(DisplayName = "N1Attack_GreatSword"),
 	E_N2Attack_GreatSword UMETA(DisplayName = "N2Attack_GreatSword"),
@@ -118,6 +141,9 @@ enum class EActionType :uint8 // 行动类型，每个角色不一定都要用�
 	E_N2Attack_Air_GreatSword UMETA(DisplayName = "N2Attack_Air_GreatSword"),
 	E_N1Attack_Air_Sprint_GreatSword UMETA(DisplayName = "N1Attack_Air_Sprint_GreatSword"),
 	E_N2Attack_Air_Sprint_GreatSword UMETA(DisplayName = "N2Attack_Air_Sprint_GreatSword"),
+
+
+
 
 	// 主手 - Bow
 	E_N1Attack_Bow UMETA(DisplayName = "N1Attack_Bow"),
@@ -205,6 +231,8 @@ enum class EWeaponType :uint8 // 武器类型
 };
 
 
+
+
 USTRUCT(BlueprintType)
 struct FWeapon : public FTableRowBase 
 {
@@ -219,6 +247,22 @@ public:
 		FString WeaponDescription;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FString WeaponActorPath;
+};
+
+USTRUCT(BlueprintType)
+struct FCreature : public FTableRowBase
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString CreatureID;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString CreatureName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FCreatureType CreatureType;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString CreatureDescription;
 };
 
 
@@ -296,6 +340,3 @@ public:
 		FString TargetID;
 
 };
-
-
-

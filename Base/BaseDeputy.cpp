@@ -44,16 +44,6 @@ EDeputyType ABaseDeputy::GetDeputyType()
 	return DeputyType;
 }
 
-void ABaseDeputy::SetUser(ABaseCreature* U)
-{
-	User = U;
-}
-
-ABaseCreature* ABaseDeputy::GetUser()
-{
-	return User;
-}
-
 // 需要通过使用者不同动作阶段触发
 void ABaseDeputy::UseDeputy_Start()
 {

@@ -15,11 +15,6 @@ void UDeputyDamageAnimNotifyState::NotifyBegin(USkeletalMeshComponent* MeshComp,
 			Character->OnDeputyDamageEnableChanged(true);
 			return;
 		}
-		ABaseMonster* Monster = Cast<ABaseMonster>(MeshComp->GetOwner());
-		if (Monster)
-		{
-			return;
-		}
 	}
 }
 
@@ -30,11 +25,6 @@ void UDeputyDamageAnimNotifyState::NotifyEnd(USkeletalMeshComponent* MeshComp, U
 		ABaseCharacter* Character = Cast<ABaseCharacter>(MeshComp->GetOwner());
 		if (Character) {
 			Character->OnDeputyDamageEnableChanged(false);
-			return;
-		}
-		ABaseMonster* Monster = Cast<ABaseMonster>(MeshComp->GetOwner());
-		if (Monster)
-		{
 			return;
 		}
 	}

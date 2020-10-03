@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "BaseEquip.h"
 #include "BaseDefinedStructs.h"
 #include "BaseWeapon.generated.h"
 
 // 武器定义：只有BaseCharacter类才能使用的，附加动作、增强伤害的道具
 
 UCLASS()
-class RPGTUTORIAL_API ABaseWeapon : public AActor
+class RPGTUTORIAL_API ABaseWeapon : public ABaseEquip
 {
 	GENERATED_BODY()
 
@@ -28,8 +29,6 @@ private:
 	
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn = "true"))
-	class ABaseCharacter* User = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float WeaponCore = 1;  // 武器核心 提升所有能力加成 1 - 3

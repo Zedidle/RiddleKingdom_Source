@@ -26,7 +26,7 @@ public:
 
 	// 0:无声 1:草地  2:岩地 3:雪地 4:沙地
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		EGroundType GroundType = EGroundType::E_NONE;
+	EGroundType GroundType = EGroundType::E_NONE;
 
 
 protected:

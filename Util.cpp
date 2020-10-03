@@ -6,6 +6,9 @@
 //using Math = UKismetMathLibrary;
 
 
+
+
+
 FString Util::GetWeaponTypeString(EWeaponType WeaponType, FString Prefix)
 {
 	TMap<EWeaponType, FString> W;
@@ -38,6 +41,35 @@ FString Util::GetDeputyTypeString(EDeputyType DeputyType, FString Prefix)
 	}
 
 	return R;
+}
+
+bool Util::AbilityCanUseWeaponType(ECharacterAbility Ability, EWeaponType WeaponType)
+{
+	TMap<ECharacterAbility, TArray<EWeaponType>> Map_AbilityWeapons;
+
+	TArray<EWeaponType> BowWeapons;
+	BowWeapons.Add(EWeaponType::E_Bow);
+	Map_AbilityWeapons.Add(ECharacterAbility::E_BOW, BowWeapons);
+
+
+	TArray<EWeaponType> SwordWeapons;
+	SwordWeapons.Add(EWeaponType::E_GreatSword);
+	SwordWeapons.Add(EWeaponType::E_Sword);
+	Map_AbilityWeapons.Add(ECharacterAbility::E_SWORD, SwordWeapons);
+
+
+	TArray<EWeaponType> MagicWeapons;
+	MagicWeapons.Add(EWeaponType::E_MagicWand);
+	Map_AbilityWeapons.Add(ECharacterAbility::E_MAGIC, MagicWeapons);
+
+	if (Map_AbilityWeapons.Contains(Ability))
+	{
+		return Map_AbilityWeapons[Ability].Contains(WeaponType);
+	}
+	else
+	{
+		return false;
+	}
 }
 
 

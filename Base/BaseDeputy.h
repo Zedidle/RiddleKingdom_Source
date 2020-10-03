@@ -4,11 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "BaseEquip.h"
 #include "BaseDefinedStructs.h"
 #include "BaseDeputy.generated.h"
 
 UCLASS()
-class RPGTUTORIAL_API ABaseDeputy : public AActor
+class RPGTUTORIAL_API ABaseDeputy : public ABaseEquip
 {
 	GENERATED_BODY()
 public:
@@ -22,8 +23,7 @@ private:
 		class UStaticMeshComponent* StaticMesh;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UArrowComponent* ArrowComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		class ABaseCreature* User;
+
 public:
 
 
@@ -44,11 +44,6 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	EDeputyType GetDeputyType();
-	
-	UFUNCTION(BlueprintCallable)
-	void SetUser(ABaseCreature* U);
-	UFUNCTION(BlueprintCallable)
-	ABaseCreature* GetUser();
 
 	//UFUNCTION(BlueprintImplementableEvent)
 	//	void DeputyAttack();

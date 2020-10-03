@@ -15,6 +15,7 @@ public:
 	ABaseSkill();
 	ABaseSkill(ESkillType Type, ABaseCreature* SkillUser, ABaseCreature* Target);
 
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SkillCore = 1;  // 技能核心, 用于后期根据使用者的属性增加伤害
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

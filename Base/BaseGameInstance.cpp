@@ -2,6 +2,9 @@
 
 
 #include "BaseGameInstance.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GamePlayStatics.h"
+#include "BaseCreature.h"
 #include "Blueprint/UserWidget.h"
 
 
@@ -41,12 +44,18 @@ ABaseMonster* UBaseGameInstance::GetCurBoss()
 
 void UBaseGameInstance::ShowCreatureHUD(bool IsShow)
 {
+
 	if (IsShow)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::ShowCreatureHUD true"));
+
 		if (IsValid(C_CreatureHUD))
 		{
+			UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::ShowCreatureHUD true 111"));
+
 			if (IsValid(CreatureHUD))
 			{
+				UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::ShowCreatureHUD true 22"));
 				CreatureHUD->RemoveFromViewport();
 			}
 			CreatureHUD = CreateWidget<UUserWidget>(GetWorld(), C_CreatureHUD);
@@ -55,6 +64,8 @@ void UBaseGameInstance::ShowCreatureHUD(bool IsShow)
 	}
 	else
 	{
+		UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::ShowCreatureHUD false"));
+
 		if (IsValid(CreatureHUD))
 		{
 			

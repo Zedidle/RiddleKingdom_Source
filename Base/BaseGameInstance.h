@@ -16,6 +16,7 @@ UCLASS()
 class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
+
 	class ABaseMonster* CurBoss = nullptr;
 	
 	class UUserWidget* BossHealthHUD = nullptr;
