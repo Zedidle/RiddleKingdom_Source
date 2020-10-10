@@ -96,8 +96,9 @@ bool ABaseSkill::MakeDamage(ABaseCreature* _Target, float ExtraDamage)
 		}
 
 		float Damage = BaseDamage + ExtraDamage + AdditionDamage;
-		_Target->AcceptDamage(Damage);
-		return true;
+		float TrueDamage = _Target->AcceptDamage(Damage);
+		return TrueDamage > 0;
+		//return true;
 	}
 	return false;
 }

@@ -6,6 +6,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Delegates/DelegateInstancesImpl.h"
 #include "Components/InputComponent.h"
+#include "CreatureAIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 using Math = UKismetMathLibrary;
 
@@ -60,6 +62,14 @@ void ABaseMonster::OnSeePawn(APawn* Pawn)
 	if (IsValid(C))
 	{
 		SetTarget(C);
+		ACreatureAIController* AIController = Cast<ACreatureAIController>(GetController());
+		if (IsValid(AIController))
+		{
+			UBlackboardComponent* BB = AIController->GetBlackboardComponent();
+			BB->SetValueAsObject("TargetActor", C);
+			UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn BB->SetValueAsObject TargetActor"));
+
+		}
 	}
 }
 
@@ -87,30 +97,6 @@ float ABaseMonster::AcceptDamage(float Damage, float Penetrate)
 	return TrueDamage;
 }
 
-void ABaseMonster::ActionModes()
-{
-	if(!IsValid(GetTarget())) return;  // 没有看到角色
-	if(IsDead()) return;
-	ActionInterval -= DeltaSeconds;
-
-	//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::ActionModes ActionInterval: %f"), ActionInterval);
-
-	FVector DistVector = GetTarget()->GetActorLocation() - GetActorLocation();
-	float DistXY = UKismetMathLibrary::VSizeXY(DistVector); // 计算与角色的水平距离
-	float DistZ = DistVector.Z; //计算与角色的垂直距离
-
-	if (ActionInterval <= 0)
-	{
-		BP_ActionModes(); // 先采取蓝图的行动，有可能增加ActionInterval
-	}
-
-	if (ActionInterval < 0)  // 采取行动
-	{
-		
-		UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::ActionModes TakeAction"));
-		ActionInterval = 1;
-	}
-}
 
 
 void ABaseMonster::CalNearTime()

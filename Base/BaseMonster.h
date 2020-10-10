@@ -26,12 +26,11 @@ public:
 	// Sets default values for this character's properties
 	ABaseMonster();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI)
-		class UPawnSensingComponent* PawnSensingComp;
+	class UPawnSensingComponent* PawnSensingComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float NearTime = 0;  // 被近身时间
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float ActionInterval = 4;  // 每次行动间隔
+
 
 	float AngerCount = 0;  // 累计伤害
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -78,11 +77,7 @@ public:
 
 	virtual float AcceptDamage(float Damage, float Penetrate=0) override;
 	
-	UFUNCTION(BlueprintCallable)
-	void ActionModes();
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void BP_ActionModes();
 	
 
 	UFUNCTION(BlueprintCallable)

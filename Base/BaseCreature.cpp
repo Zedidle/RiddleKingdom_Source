@@ -36,6 +36,31 @@ ABaseCreature::ABaseCreature()
 
 
 
+
+void ABaseCreature::ActionModes()
+{
+	if (!IsAI) return;
+	if (!IsValid(GetTarget())) return;  // 没有看到角色
+	if (IsDead()) return;
+	ActionInterval -= DeltaSeconds;
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::ActionModes ActionInterval: %f"), ActionInterval);
+
+	FVector DistVector = GetTarget()->GetActorLocation() - GetActorLocation();
+	float DistXY = UKismetMathLibrary::VSizeXY(DistVector); // 计算与角色的水平距离
+	float DistZ = DistVector.Z; //计算与角色的垂直距离
+
+	if (ActionInterval <= 0)
+	{
+		BP_ActionModes(); // 先采取蓝图的行动，有可能增加ActionInterval
+	}
+
+	if (ActionInterval < 0)  // 采取行动
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::ActionModes TakeAction"));
+		ActionInterval = 1;
+	}
+}
+
 void ABaseCreature::SetMovement(float SpeedMulti, float RotationRataZMulti, EMovementMode Mode)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::SetMovement"));
@@ -245,6 +270,7 @@ void ABaseCreature::Dead()
 	{
 		DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
 	}
+	SetMovement(2,2,EMovementMode::MOVE_Falling);
 	PlayMontage("Dead");
 	BP_Dead();
 }
@@ -255,8 +281,10 @@ void ABaseCreature::Revive()
 	CurHealth = MaxHealth;
 	if (UGameplayStatics::GetPlayerCharacter(GetWorld(), 0) == this)
 	{
+		IsAI = false;
 		EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
 	}
+	IsLocking = false;
 	GetMesh()->GetAnimInstance()->Montage_Resume(nullptr);
 	PlayMontage("Revive");
 }

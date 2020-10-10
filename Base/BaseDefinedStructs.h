@@ -21,7 +21,7 @@ enum class EFaction :uint8 // 技能阵营
 	E_Monster UMETA(DisplayName = "怪物")	// Magic
 };
 
-UENUM(BlueprintType)
+UENUM(BlueprintType, Blueprintable)
 enum class EDistance :uint8 // 怪物行动范围
 {
 	E_PLUMB_NEAR UMETA(DisplayName = "垂直 近距离 0-500"),
@@ -90,6 +90,7 @@ enum class EActionType :uint8
 
 	// 基础通用
 	E_Dead UMETA(DisplayName = "Dead"),
+	E_Dead_Air UMETA(DisplayName = "Dead_Air"),
 	E_Revive UMETA(DisplayName = "Revive"),
 	E_TakeOff UMETA(DisplayName = "TakeOff"),
 	E_Jump_Sprint UMETA(DisplayName = "Jump_Sprint"),

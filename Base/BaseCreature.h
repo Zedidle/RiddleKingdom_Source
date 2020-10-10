@@ -8,25 +8,12 @@
 #include "BaseDefinedStructs.h"
 #include "BaseWeapon.h"
 #include "BaseDeputy.h"
+#include "ActionInterface.h"
 #include "BaseCreature.generated.h"
 
 
-
-//USTRUCT()
-//struct FComboIndex
-//{
-//	GENERATED_BODY()
-//
-//public:
-//	int N1Attack = 0;
-//	int N2Attack = 0;
-//	int Jump = 0;
-//	int Stiff = 0;
-//};
-
-
 UCLASS()
-class RPGTUTORIAL_API ABaseCreature : public ACharacter
+class RPGTUTORIAL_API ABaseCreature : public ACharacter, public IActionInterface
 {
 	GENERATED_BODY()
 
@@ -48,6 +35,12 @@ public:
 	// 是否作为AI
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) 
 		bool IsAI = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float ActionInterval = 2;  // 每次行动间隔
+	UFUNCTION(BlueprintCallable)
+		void ActionModes();
+	UFUNCTION(BlueprintImplementableEvent)
+		void BP_ActionModes();
 
 	// 当承受伤害大于生命百分比（StiffPercent）时，触发硬直动作
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -145,7 +138,6 @@ protected:
 		int Defense = 0;	// 防御力
 
 
-	float FallingTime = 0;  // 下落时间，用来处理跌落效果
 	UFUNCTION()
 		void Falling();
 
@@ -167,6 +159,11 @@ protected:
 
 
 public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float FallingTime = 0;  // 下落时间，用来处理跌落效果
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString CreatureID = "000";
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -275,39 +272,11 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-
-
 	UFUNCTION(BlueprintCallable)
 		EDistance GetDistanceTypeToTarget();
 
-
-
-	// 想办法优化下面代码
-	UFUNCTION(BlueprintImplementableEvent)
-		void BP_DA_PLUMB_NEAR();
-	UFUNCTION(BlueprintImplementableEvent)
-		void BP_DA_PLUMB_MID();
-	UFUNCTION(BlueprintImplementableEvent)
-		void BP_DA_PLUMB_FAR();
-	UFUNCTION(BlueprintImplementableEvent)
-		void BP_DA_PLUMB_SFAR();
-	UFUNCTION(BlueprintImplementableEvent)
-		void BP_DA_FLAT_NEAR();
-	UFUNCTION(BlueprintImplementableEvent)
-		void BP_DA_FLAT_MID();
-	UFUNCTION(BlueprintImplementableEvent)
-		void BP_DA_FLAT_FAR();
-	UFUNCTION(BlueprintImplementableEvent)
-		void BP_DA_FLAT_SFAR();
-
-
 	UFUNCTION(BlueprintCallable)
 		bool PlayMontage(FString Rowname, FString SectionName = "", float PlayRate=1.0f);
-
-
-
-
-
 
 
 };
