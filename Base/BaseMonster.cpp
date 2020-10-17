@@ -57,29 +57,43 @@ void ABaseMonster::Dead()
 void ABaseMonster::OnSeePawn(APawn* Pawn)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn"));
-	if (IsDead()) return;
+	if (IsDead() || !bAI) return;
+	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn 111"));
 	ABaseCreature* C = Cast<ABaseCreature>(Pawn);
-	if (IsValid(C))
-	{
-		SetTarget(C);
-		ACreatureAIController* AIController = Cast<ACreatureAIController>(GetController());
-		if (IsValid(AIController))
-		{
-			UBlackboardComponent* BB = AIController->GetBlackboardComponent();
-			BB->SetValueAsObject("TargetActor", C);
-			UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn BB->SetValueAsObject TargetActor"));
+	if (!IsValid(C) || C->IsDead()) return;
+	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn Name: %s"), *C->GetName());
 
+	SetTarget(C);
+
+	ACreatureAIController* AIController = Cast<ACreatureAIController>(GetController());
+	if (IsValid(AIController))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn 333"));
+		UBlackboardComponent* BB = AIController->GetBlackboardComponent();
+		BB->SetValueAsObject("TargetActor", C);
+		UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn BB->SetValueAsObject TargetActor"));
+		if (Faction != C->Faction)
+		{
+			bCombating = true;
 		}
 	}
 }
 
 void ABaseMonster::OnAttackChanged(bool Enable)
 {
+	if (Enable)
+	{
+		CanAction = false;
+	}
+	else
+	{
+		CanAction = true;
+	}
 }
 
 void ABaseMonster::OnAttackDamageEnableChanged(bool Enable)
 {
-	//BP_OnAttackDamageEnableChanged(Enable);
+	BP_OnAttackDamageEnableChanged(Enable);
 }
 
 void ABaseMonster::OnAttackComboEnableChanged(bool Enable)
@@ -168,13 +182,20 @@ void ABaseMonster::SetStiffCount(float Count)
 
 void ABaseMonster::SetTarget(ABaseCreature* C)
 {
-	if(IsValid(Target)) return;
+	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget"));
+	// 后面还要考虑AI状态下，Target死亡后如何转移目标（仇恨值、最低生命值）
+	// “当前目标死亡后才能够更换新目标”
+	if (bAI && IsValid(Target) && !Target->IsDead())
+	{
+		return;
+	}
+	
 	Super::SetTarget(C);
-	//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget 111"));
+	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget 111"));
 	UBaseGameInstance* GI = Cast<UBaseGameInstance>(GetGameInstance());
 	if (IsValid(GI) && EMonsterLevel::E_Boss == MonsterLevel)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget 222"));
+		//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget Boss"));
 		GI->SetCurBoss(this);
 	}
 }

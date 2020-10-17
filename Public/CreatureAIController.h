@@ -14,8 +14,8 @@ class RPGTUTORIAL_API ACreatureAIController : public AAIController
 {
 	GENERATED_BODY()
 public:
-		UPROPERTY(Category = BehaviorTree, EditAnywhere, BlueprintReadWrite)
-			class UBehaviorTree* BTAsset = nullptr;
+	UPROPERTY(Category = BehaviorTree, EditAnywhere, BlueprintReadWrite)
+		class UBehaviorTree* BTAsset = nullptr;
 
 
 	virtual void OnPossess(APawn* InPawn) override;

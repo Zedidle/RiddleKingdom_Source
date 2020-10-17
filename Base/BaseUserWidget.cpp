@@ -3,3 +3,7 @@
 
 #include "BaseUserWidget.h"
 
+void UBaseUserWidget::SetOwner(ABaseCreature* Creature)
+{
+	Owner = Creature;
+}

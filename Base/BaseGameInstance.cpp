@@ -42,10 +42,10 @@ ABaseMonster* UBaseGameInstance::GetCurBoss()
 }
 
 
-void UBaseGameInstance::ShowCreatureHUD(bool IsShow)
+void UBaseGameInstance::ShowCreatureHUD(bool bShow)
 {
 
-	if (IsShow)
+	if (bShow)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::ShowCreatureHUD true"));
 
@@ -74,4 +74,49 @@ void UBaseGameInstance::ShowCreatureHUD(bool IsShow)
 	}
 }
 
+void UBaseGameInstance::ShowCreatureInfo(bool bShow)
+{
+	UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::ShowCreatureInfo"));
+	if (bShow)
+	{
+		if (IsValid(CreatureInfoHUD))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::ShowCreatureInfo IsValid(CreatureInfoHUD)： true"));
+			return;
+		}
+		if (IsValid(C_CreatureInfoHUD))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::ShowCreatureInfo IsValid(CreatureInfoHUD)： 1111111"));
+			CreatureInfoHUD = CreateWidget<UUserWidget>(GetWorld(), C_CreatureInfoHUD);
+			CreatureInfoHUD->AddToViewport();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::ShowCreatureInfo IsValid(CreatureInfoHUD)： 2222222 "));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::ShowCreatureInfo IsValid(CreatureInfoHUD)： fasle"));
+		if (IsValid(CreatureInfoHUD))
+		{
+			CreatureInfoHUD->RemoveFromViewport();
+		}
+	}
 
+}
+
+
+void UBaseGameInstance::ShowEquipInfo()
+{
+	UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::ShowEquipInfo"));
+	if (IsValid(C_EquipInfoHUD))
+	{
+		if (IsValid(EquipInfoHUD))
+		{
+			EquipInfoHUD->RemoveFromViewport();
+		}
+		EquipInfoHUD = CreateWidget<UUserWidget>(GetWorld(), C_EquipInfoHUD);
+		EquipInfoHUD->AddToViewport();
+	}
+}

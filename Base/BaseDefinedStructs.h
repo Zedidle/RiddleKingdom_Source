@@ -29,7 +29,9 @@ enum class EDistance :uint8 // 怪物行动范围
 	E_PLUMB_FAR UMETA(DisplayName = "垂直 远距离 1000-1500"),
 	E_PLUMB_SFAR UMETA(DisplayName = "垂直 超远距离 >1500"),
 
-	E_FLAT_NEAR UMETA(DisplayName = "水平 近距离 0-500"),
+
+	E_FLAT_SNEAR UMETA(DisplayName = "水平 超近距离 0-300"),
+	E_FLAT_NEAR UMETA(DisplayName = "水平 近距离 300-500"),
 	E_FLAT_MID UMETA(DisplayName = "水平 中距离 500-1500"),
 	E_FLAT_FAR UMETA(DisplayName = "水平 远距离 1500-2400"),
 	E_FLAT_SFAR UMETA(DisplayName = "水平 超远距离 >2400"),
@@ -51,6 +53,7 @@ enum class FCreatureType :uint8 // 怪物类型
 	E_Troll  UMETA(DisplayName = "巨魔", ShortToolTip = "Troll"),
 	E_Dragon UMETA(DisplayName = "龙族", ShortToolTip = "Dragon"),
 	E_Goblin UMETA(DisplayName = "妖精", ShortToolTip = "Goblin"),
+	E_Unreal UMETA(DisplayName = "虚空", ShortToolTip = "Unreal"),
 };
 
 UENUM(BlueprintType)
@@ -103,12 +106,14 @@ enum class EActionType :uint8
 	E_StopTurn180 UMETA(DisplayName = "StopTurn180"),
 	E_Dodge UMETA(DisplayName = "Dodge"),
 	E_HighFall UMETA(DisplayName = "HighFall"),
-
+	E_Repel UMETA(DisplayName = "Repel"),
+	
 
 
 
 
 	// 各类副手
+	E_UseDeputy UMETA(DisplayName = "UseDeputy"),
 	E_UseDeputy_Shield UMETA(DisplayName = "UseDeputy_Shield"),
 	E_UseDeputy_Dagger UMETA(DisplayName = "UseDeputy_Dagger"),
 

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// 基础生物特点
 
 #pragma once
 
@@ -21,6 +21,8 @@ public:
 	// Sets default values for this character's properties
 	ABaseCreature();
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class UCreatureWidgetComponent* HealthWidget = nullptr;
+	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class USpringArmComponent* SpringArm = nullptr;
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* Camera = nullptr;
@@ -32,9 +34,26 @@ public:
 
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float BaseSpringArmLength = 400;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float CommunicatePressTime = 0;
 	// 是否作为AI
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) 
-		bool IsAI = false;
+		bool bAI = false;
+
+	UFUNCTION(BlueprintCallable)
+		bool IsPlayerControlling();
+
+	// 是否处于战斗状态
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool bCombating = false;
+	// 是否准备起飞，一般由AI处理
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=AI)
+		bool bReadyTakeOff = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float ActionInterval = 2;  // 每次行动间隔
 	UFUNCTION(BlueprintCallable)
@@ -46,7 +65,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float StiffPercent = 0.05; 
 
-
 	UFUNCTION(BlueprintCallable)
 		void SetMovement(float SpeedMulti = 2, float RotationRataZMulti = 2, EMovementMode Mode = EMovementMode::MOVE_None);
 
@@ -54,7 +72,6 @@ public:
 		void SetDilation(float WorldScale, float SelfScale, float Time = 0.0f);
 	UFUNCTION(BlueprintCallable)
 		void InitDilation();
-
 
 	// 所有操作定义
 	UFUNCTION()
@@ -81,6 +98,12 @@ public:
 		virtual void Dodge();
 	UFUNCTION(BlueprintImplementableEvent)
 		void BP_Dodge();
+	UFUNCTION()
+		void FarView();
+	UFUNCTION()
+		void NearView();
+
+
 	UFUNCTION()
 		virtual void Communicate();
 	UFUNCTION(BlueprintImplementableEvent)
@@ -123,19 +146,19 @@ protected:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float CurHealth;
+		float CurHealth = 95;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float MaxHealth;
+		float MaxHealth = 100;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float HealthRegen; // 每秒恢复生命值
+		float HealthRegen = 1; // 每秒恢复生命值
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float CurStamina;
+		float CurStamina = 95;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float MaxStamina;
+		float MaxStamina = 100;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float StaminaRegen;	// 每秒恢复体力
+		float StaminaRegen = 1;	// 每秒恢复体力
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int Defense = 0;	// 防御力
+		int Defense = 5;	// 防御力
 
 
 	UFUNCTION()
@@ -166,10 +189,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString CreatureID = "000";
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FString CreatureName = "CreatureName";
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FCreatureType CreatureType = FCreatureType::E_None;
 
 
 	// 运动部分
@@ -216,6 +235,8 @@ public:
 		void BP_AcceptDamage();
 
 
+	UFUNCTION(BlueprintCallable)
+		bool SameFaction(ABaseCreature* OtherCreature);
 
 
 	// 运动状态判断
@@ -278,5 +299,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 		bool PlayMontage(FString Rowname, FString SectionName = "", float PlayRate=1.0f);
 
+	UFUNCTION(BlueprintCallable)
+		bool NeedQuickRotate();
 
+	UFUNCTION(BlueprintCallable)
+		FTransform GetTransform_ProjectileToTarget();
 };

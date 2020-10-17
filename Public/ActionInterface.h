@@ -21,10 +21,13 @@ class RPGTUTORIAL_API IActionInterface
 {
 	GENERATED_BODY()
 
+
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	virtual void ActionDelegate(EDistance D);
 
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+		void ActionFlatSNear();
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
 		void ActionFlatNear();
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
@@ -45,5 +48,7 @@ public:
 		void ActionTurn90();
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
 		void ActionTakeOff();
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+		void ActionRandomWander();
 
 };

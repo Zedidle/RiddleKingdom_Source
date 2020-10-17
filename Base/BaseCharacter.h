@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// 基础人物角色，可以指定武器，有更灵活的招式
 
 #pragma once
 

@@ -6,6 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "../ActorComponents/CreatureWidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "../Util.h"
@@ -19,34 +20,45 @@ ABaseCreature::ABaseCreature()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	bUseControllerRotationYaw = false;
+
+	HealthWidget = CreateDefaultSubobject<UCreatureWidgetComponent>("HealthWidget");
+	HealthWidget->SetupAttachment(GetMesh());
+
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
-	SpringArm->bUsePawnControlRotation = true;
 	SpringArm->SetupAttachment(RootComponent);
+	SpringArm->bEnableCameraLag = true;
 	SpringArm->TargetArmLength = 400;
+	SpringArm->CameraRotationLagSpeed = 10;
 	SpringArm->CameraLagSpeed = 5;
+	SpringArm->bUsePawnControlRotation = true;
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->SetupAttachment(SpringArm);
 	Camera->SetRelativeLocation(FVector(80, 0, 80));
 
-
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(90, 90, 120);
 	CreatureTracer = CreateDefaultSubobject<UCreatureTracer>("CreatureTracer");
 
 }
 
 
-
+bool ABaseCreature::IsPlayerControlling()
+{
+	return GetController() == UGameplayStatics::GetPlayerController(GetWorld(), 0);
+}
 
 void ABaseCreature::ActionModes()
 {
-	if (!IsAI) return;
+	if (!bAI) return;
 	if (!IsValid(GetTarget())) return;  // 没有看到角色
 	if (IsDead()) return;
 	ActionInterval -= DeltaSeconds;
 	//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::ActionModes ActionInterval: %f"), ActionInterval);
 
 	FVector DistVector = GetTarget()->GetActorLocation() - GetActorLocation();
-	float DistXY = UKismetMathLibrary::VSizeXY(DistVector); // 计算与角色的水平距离
+	float DistXY = Math::VSizeXY(DistVector); // 计算与角色的水平距离
 	float DistZ = DistVector.Z; //计算与角色的垂直距离
 
 	if (ActionInterval <= 0)
@@ -122,6 +134,8 @@ void ABaseCreature::InitDilation()
 void ABaseCreature::BeginPlay()
 {
 	Super::BeginPlay();
+	BaseSpringArmLength = SpringArm->TargetArmLength;
+	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	ComboIndex.Add("N1Attack", 0);
 	ComboIndex.Add("N2Attack", 0);
 	ComboIndex.Add("Jump", 0);
@@ -133,10 +147,10 @@ void ABaseCreature::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if(IsDead()) return;
+	bAI = !IsPlayerControlling();
 	DeltaSeconds = DeltaTime;
 	Regen();
 	Falling();
-
 }
 
 void ABaseCreature::Falling()
@@ -184,6 +198,9 @@ void ABaseCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction("Lock", IE_Pressed, this, &ABaseCreature::Lock);
 	PlayerInputComponent->BindAction("Dodge", IE_Pressed, this, &ABaseCreature::Dodge);
 
+	PlayerInputComponent->BindAction("FarView", IE_Pressed, this, &ABaseCreature::FarView);
+	PlayerInputComponent->BindAction("NearView", IE_Pressed, this, &ABaseCreature::NearView);
+
 	PlayerInputComponent->BindAxis("MoveForward", this, &ABaseCreature::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ABaseCreature::MoveRight);
 	PlayerInputComponent->BindAxis("Turn", this, &ABaseCreature::Turn);
@@ -202,7 +219,7 @@ EDistance ABaseCreature::GetDistanceTypeToTarget()
 
 
 	FVector DistVector = GetTarget()->GetActorLocation() - GetActorLocation();
-	float DistXY = UKismetMathLibrary::VSizeXY(DistVector); // 计算与角色的水平距离
+	float DistXY = Math::VSizeXY(DistVector); // 计算与角色的水平距离
 	float DistZ = DistVector.Z; //计算与角色的垂直距离
 	if (DistZ < 0)
 	{
@@ -213,7 +230,11 @@ EDistance ABaseCreature::GetDistanceTypeToTarget()
 
 	if (IsGround())
 	{
-		if (0 <= DistXY && DistXY < 500)
+		if (0 <= DistXY && DistXY < 300)
+		{
+			return EDistance::E_FLAT_SNEAR;
+		}
+		else if (300 <= DistXY && DistXY < 500)
 		{
 			return EDistance::E_FLAT_NEAR;
 		}
@@ -281,7 +302,7 @@ void ABaseCreature::Revive()
 	CurHealth = MaxHealth;
 	if (UGameplayStatics::GetPlayerCharacter(GetWorld(), 0) == this)
 	{
-		IsAI = false;
+		bAI = false;
 		EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
 	}
 	IsLocking = false;
@@ -323,13 +344,13 @@ float ABaseCreature::AcceptDamage(float Damage, float Penetrate)
 	if (Damage < 0)
 	{
 		CurHealth -= Damage;
-		CurHealth = UKismetMathLibrary::Min(CurHealth, MaxHealth);
+		CurHealth = Math::Min(CurHealth, MaxHealth);
 		return 0;
 	}
 
 
 	if (IsInvincible() || IsDead()) return 0;
-	float TrueDefense = UKismetMathLibrary::Max(Defense - Penetrate, 0);
+	float TrueDefense = Math::Max(Defense - Penetrate, 0);
 	Damage = Damage * 100 / (TrueDefense + 100);
 
 	SetInvincible(0.1f);
@@ -347,6 +368,15 @@ float ABaseCreature::AcceptDamage(float Damage, float Penetrate)
 
 
 
+
+bool ABaseCreature::SameFaction(ABaseCreature* OtherCreature)
+{
+	if (IsValid(OtherCreature))
+	{
+		return Faction == OtherCreature->Faction;
+	}
+	return false;
+}
 
 bool ABaseCreature::IsFalling()
 {
@@ -447,14 +477,17 @@ void ABaseCreature::StopSprinting()
 
 void ABaseCreature::N1Attack()
 {
+	PlayMontage("N1Attack");
 }
 
 void ABaseCreature::N2Attack()
 {
+	PlayMontage("N2Attack");
 }
 
 void ABaseCreature::UseDeputy()
 {
+	PlayMontage("UseDeputy");
 }
 
 void ABaseCreature::Lock()
@@ -472,15 +505,15 @@ void ABaseCreature::Dodge()
 		{
 			PlayMontage("Dodge", "Climbing");
 		}
-		else if (AnimInstance->RightSpeed < -30)
+		else if (AnimInstance->RightSpeed < -100)
 		{
 			PlayMontage("Dodge", "Left");
 		}
-		else if (AnimInstance->RightSpeed > 30)
+		else if (AnimInstance->RightSpeed > 100)
 		{
 			PlayMontage("Dodge", "Right");
 		}
-		else if (AnimInstance->ForwardSpeed < -30)
+		else if (AnimInstance->ForwardSpeed < -100)
 		{
 			PlayMontage("Dodge", "Backward");
 		}
@@ -491,9 +524,32 @@ void ABaseCreature::Dodge()
 	}
 }
 
+void ABaseCreature::FarView()
+{
+	if (IsValid(SpringArm))
+	{
+		if (SpringArm->TargetArmLength < BaseSpringArmLength * 2)
+		{
+			SpringArm->TargetArmLength += 0.1 * BaseSpringArmLength;
+		}
+	}
+}
+
+void ABaseCreature::NearView()
+{
+	if (IsValid(SpringArm))
+	{
+		if (SpringArm->TargetArmLength > 0)
+		{
+			SpringArm->TargetArmLength -= 0.1 * BaseSpringArmLength;
+		}
+	}
+}
+
 void ABaseCreature::Communicate()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Communicate"));
+
 	BP_Communicate();
 }
 
@@ -601,6 +657,7 @@ bool ABaseCreature::IsInvincible()
 
 void ABaseCreature::SetTarget(ABaseCreature* C)
 {
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::SetTarget: %s"), *C->GetName());
 	Target = C;
 }
 ABaseCreature* ABaseCreature::GetTarget()
@@ -612,12 +669,15 @@ ABaseCreature* ABaseCreature::GetTarget()
 
 bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName,  float PlayRate)
 {
-	if(!CanAction) return false;
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage Rowname: %s"), *Rowname);
 	if (Rowname == "")	return false;
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage Rowname: 000"));
 	TArray<FString> MontageCanPlayDead = {"Dead", "Revive"};
+	if (!MontageCanPlayDead.Contains(Rowname) && !CanAction) return false;
 	if (!MontageCanPlayDead.Contains(Rowname) && IsDead()) return false;
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage 111"));
 	if (!IsValid(CreatureMontageDataTable)) return false;
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage 222"));
 	int _Index = Rowname.Find("_");
 	FString ActionName;
 	if (_Index > -1)
@@ -662,4 +722,53 @@ bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName,  float Pla
 		}
 	}
 	return false;
+}
+
+bool ABaseCreature::NeedQuickRotate()
+{
+	FRotator Rotator;
+	if (IsValid(Target) && bAI)
+	{
+		FVector SelfLocation = GetActorLocation();
+		FVector TargetLocation = Target->GetActorLocation();
+		// 仅平面角度，因此Z都设为0
+		SelfLocation.Z = 0;
+		TargetLocation.Z = 0;
+		Rotator = Math::FindLookAtRotation(SelfLocation, TargetLocation);
+	}
+	else
+	{
+		Rotator = GetControlRotation();
+	}
+
+	if (IsGround())
+	{	// 当处于地面时，角色所看方向与操作方向的点积小于0的话，表示在后方
+		return Math::Dot_VectorVector(GetActorForwardVector(), Math::GetForwardVector(Rotator)) < 0;
+	}
+	else
+	{
+		// 空战部分，暂时不写
+		return false;
+	}
+
+
+	return false;
+}
+
+FTransform ABaseCreature::GetTransform_ProjectileToTarget()
+{
+	FVector EndPoint;
+	if (bAI && IsValid(Target))
+	{
+		EndPoint = Target->GetActorLocation();
+	}
+	else
+	{
+		EndPoint = Camera->GetComponentLocation() + Math::GetForwardVector(Camera->GetComponentRotation()) * 10000;
+	}
+
+	FVector Location = GetMesh()->GetSocketLocation(FName("Fire_Start"));
+	FRotator Rotator = Math::FindLookAtRotation(Location, EndPoint);
+
+	return FTransform(Rotator, Location);
 }

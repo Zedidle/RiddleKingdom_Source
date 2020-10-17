@@ -49,6 +49,9 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void OnHit(bool IsHit);
+	void OnHit(bool bHit);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_OnHit(bool bHit);
 		
 };

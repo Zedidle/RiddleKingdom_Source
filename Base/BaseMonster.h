@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// 基础怪物，一般与BaseCharacter的阵营对立且拥有怒气值系统与更为充沛的体力值
 
 #pragma once
 
@@ -30,7 +30,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float NearTime = 0;  // 被近身时间
-
 
 	float AngerCount = 0;  // 累计伤害
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -66,14 +65,13 @@ public:
 
 	UFUNCTION()
 		void OnAttackChanged(bool Enable);
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 		void OnAttackDamageEnableChanged(bool Enable);
+	UFUNCTION(BlueprintImplementableEvent)
+		void BP_OnAttackDamageEnableChanged(bool Enable);
 	UFUNCTION()
 		void OnAttackComboEnableChanged(bool Enable);
-	//UFUNCTION(BlueprintCallable)
-	//	void AttackDamageEnable(bool Enable);
-	//UFUNCTION(BlueprintImplementableEvent)
-	//	void BP_OnAttackDamageEnableChanged(bool Enable);
+
 
 	virtual float AcceptDamage(float Damage, float Penetrate=0) override;
 	

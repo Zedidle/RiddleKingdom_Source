@@ -18,5 +18,4 @@ void ACreatureAIController::OnPossess(APawn* InPawn)
 	{
 		RunBehaviorTree(BTAsset);
 	}
-
 }

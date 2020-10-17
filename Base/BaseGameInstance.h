@@ -23,13 +23,20 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 
 	class UUserWidget* CreatureHUD = nullptr;
 
+	class UUserWidget* CreatureInfoHUD = nullptr;
+
+	class UUserWidget* EquipInfoHUD = nullptr;
+
 	public:
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
-			TSubclassOf<UUserWidget> C_CreatureHUD = nullptr;
-
-
-		UPROPERTY(EditAnywhere, BlueprintReadWrite)
 			TSubclassOf<UUserWidget> C_BossHealth = nullptr;
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+			TSubclassOf<UUserWidget> C_CreatureHUD = nullptr;
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+			TSubclassOf<UUserWidget> C_CreatureInfoHUD = nullptr;
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+			TSubclassOf<UUserWidget> C_EquipInfoHUD = nullptr;
+
 
 	public:
 		UFUNCTION(BlueprintCallable)
@@ -39,7 +46,12 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 		ABaseMonster* GetCurBoss();
 		
 		UFUNCTION(BlueprintCallable)
-		void ShowCreatureHUD(bool IsShow);
+		void ShowCreatureHUD(bool bShow);
 
+		UFUNCTION(BlueprintCallable)
+		void ShowCreatureInfo(bool bShow);
+
+		UFUNCTION(BlueprintCallable)
+			void ShowEquipInfo();
 
 };
