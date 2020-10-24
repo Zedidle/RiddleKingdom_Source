@@ -24,17 +24,17 @@ enum class EFaction :uint8 // 技能阵营
 UENUM(BlueprintType, Blueprintable)
 enum class EDistance :uint8 // 怪物行动范围
 {
-	E_PLUMB_NEAR UMETA(DisplayName = "垂直 近距离 0-500"),
-	E_PLUMB_MID UMETA(DisplayName = "垂直 中距离 500-1000"),
-	E_PLUMB_FAR UMETA(DisplayName = "垂直 远距离 1000-1500"),
-	E_PLUMB_SFAR UMETA(DisplayName = "垂直 超远距离 >1500"),
+	E_PLUMB_NEAR UMETA(DisplayName = "垂直 近距离"),
+	E_PLUMB_MID UMETA(DisplayName = "垂直 中距离"),
+	E_PLUMB_FAR UMETA(DisplayName = "垂直 远距离"),
+	E_PLUMB_SFAR UMETA(DisplayName = "垂直 超远距离"),
 
 
-	E_FLAT_SNEAR UMETA(DisplayName = "水平 超近距离 0-300"),
-	E_FLAT_NEAR UMETA(DisplayName = "水平 近距离 300-500"),
-	E_FLAT_MID UMETA(DisplayName = "水平 中距离 500-1500"),
-	E_FLAT_FAR UMETA(DisplayName = "水平 远距离 1500-2400"),
-	E_FLAT_SFAR UMETA(DisplayName = "水平 超远距离 >2400"),
+	E_FLAT_SNEAR UMETA(DisplayName = "水平 超近距离"),
+	E_FLAT_NEAR UMETA(DisplayName = "水平 近距离"),
+	E_FLAT_MID UMETA(DisplayName = "水平 中距离"),
+	E_FLAT_FAR UMETA(DisplayName = "水平 远距离"),
+	E_FLAT_SFAR UMETA(DisplayName = "水平 超远距离"),
 };
 
 UENUM(BlueprintType)
@@ -226,8 +226,19 @@ public:
 };
 
 
+
+
+
+
+
+
+/*
+	=========================  装备区 =========================
+*/
+
+
 UENUM(BlueprintType)
-enum class EWeaponType :uint8 // 武器类型
+enum class EWeaponType :uint8 // 主武器类型
 {
 	E_None UMETA(DisplayName = "None"),
 	E_GreatSword UMETA(DisplayName = "GreatSword"),
@@ -236,7 +247,27 @@ enum class EWeaponType :uint8 // 武器类型
 	E_MagicWand UMETA(DisplayName = "MagicWand")
 };
 
+UENUM(BlueprintType)
+enum class EDeputyType :uint8  // 副手类型
+{
+	E_None UMETA(DisplayName = "无"),
+	E_Shild UMETA(DisplayName = "Shild"), // 盾牌基本效果：使用者无敌一些时间，额外效果：每个盾牌都不同；
+	E_Dagger UMETA(DisplayName = "Dagger"), // 破防/涂毒
+};
 
+UENUM(BlueprintType)
+enum class EArmorType :uint8  // 防具类型
+{
+	E_None UMETA(DisplayName = "无"),
+	E_Helmet UMETA(DisplayName = "头盔"),
+	E_Barcer UMETA(DisplayName = "护臂"),
+	E_Glove UMETA(DisplayName = "手套"),
+	E_Ring UMETA(DisplayName = "戒指"),
+	E_Jacket UMETA(DisplayName = "上衣"),
+	E_Cape UMETA(DisplayName = "披风"),
+	E_Trousers UMETA(DisplayName = "裤子"),
+	E_Shoes UMETA(DisplayName = "鞋子"),
+}; 
 
 
 USTRUCT(BlueprintType)
@@ -256,6 +287,51 @@ public:
 };
 
 USTRUCT(BlueprintType)
+struct FDeputy : public FTableRowBase
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString DeputyName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		EDeputyType DeputyType;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString DeputyDescription;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString DeputyActorPath;
+};
+
+USTRUCT(BlueprintType)
+struct FArmor : public FTableRowBase
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString ArmorName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		EArmorType ArmorType;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString ArmorDescription;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString ArmorActorPath;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+USTRUCT(BlueprintType)
 struct FCreature : public FTableRowBase
 {
 	GENERATED_BODY()
@@ -272,29 +348,6 @@ public:
 };
 
 
-UENUM(BlueprintType)
-enum class EDeputyType :uint8  // 副手类型
-{
-	E_None UMETA(DisplayName = "无"),
-	E_Shild UMETA(DisplayName = "Shild"), // 盾牌基本效果：使用者无敌一些时间，额外效果：每个盾牌都不同；
-	E_Dagger UMETA(DisplayName = "Dagger"), // 破防/涂毒
-};
-
-USTRUCT(BlueprintType)
-struct FDeputy : public FTableRowBase
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FString DeputyName;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		EDeputyType DeputyType;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FString DeputyDescription;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FString DeputyActorPath;
-};
 
 
 

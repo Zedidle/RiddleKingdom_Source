@@ -17,17 +17,32 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 
-	class ABaseMonster* CurBoss = nullptr;
-	
-	class UUserWidget* BossHealthHUD = nullptr;
 
-	class UUserWidget* CreatureHUD = nullptr;
-
-	class UUserWidget* CreatureInfoHUD = nullptr;
-
-	class UUserWidget* EquipInfoHUD = nullptr;
 
 	public:
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+			class UDataTable* DT_Weapon = nullptr;
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+			class UDataTable* DT_Deputy = nullptr;
+
+		UPROPERTY(BlueprintReadOnly)
+		TArray<ABaseCreature*> CreatureUsed;
+
+
+		UPROPERTY(BlueprintReadOnly)
+		class ABaseMonster* CurBoss = nullptr;
+		UPROPERTY(BlueprintReadOnly)
+		class UUserWidget* BossHealthHUD = nullptr;
+		UPROPERTY(BlueprintReadOnly)
+		class UUserWidget* CreatureHUD = nullptr;
+		UPROPERTY(BlueprintReadOnly)
+		class UUserWidget* CreatureInfoHUD = nullptr;
+		UPROPERTY(BlueprintReadOnly)
+		class UUserWidget* EquipInfoHUD = nullptr;
+		UPROPERTY(BlueprintReadOnly)
+		class UUserWidget* DeadHUD = nullptr;
+
+
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
 			TSubclassOf<UUserWidget> C_BossHealth = nullptr;
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -36,9 +51,24 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 			TSubclassOf<UUserWidget> C_CreatureInfoHUD = nullptr;
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
 			TSubclassOf<UUserWidget> C_EquipInfoHUD = nullptr;
-
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+			TSubclassOf<UUserWidget> C_DeadHUD = nullptr;
 
 	public:
+		UFUNCTION(BlueprintCallable)
+		void AddCreatureUsed(ABaseCreature* Creature);
+
+		UFUNCTION(BlueprintCallable)
+		void PopCreatureUsed();
+
+		UFUNCTION(BlueprintCallable)
+		ABaseCreature* GetCurCreatureUsed();
+
+
+
+
+
+
 		UFUNCTION(BlueprintCallable)
 		void SetCurBoss(ABaseMonster* M);
 
@@ -52,6 +82,9 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 		void ShowCreatureInfo(bool bShow);
 
 		UFUNCTION(BlueprintCallable)
-			void ShowEquipInfo();
+		void ShowEquipInfo(bool bShow);
 
+		UFUNCTION(BlueprintCallable)
+		void ShowDeadHUD(bool bShow);
+		
 };

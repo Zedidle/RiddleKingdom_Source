@@ -19,3 +19,9 @@ void ACreatureAIController::OnPossess(APawn* InPawn)
 		RunBehaviorTree(BTAsset);
 	}
 }
+
+void ACreatureAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
+{
+	Super::OnMoveCompleted(RequestID, Result);
+	BP_OnMoveCompleted();
+}

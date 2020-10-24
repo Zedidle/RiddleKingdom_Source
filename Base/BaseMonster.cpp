@@ -36,14 +36,30 @@ void ABaseMonster::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if(IsDead()) return;
 	ActionModes();
-	CalNearTime();
+	Tick_CalNearTime();
+}
+
+void ABaseMonster::Tick_CalNearTime()
+{
+	if (!IsValid(GetTarget())) return;
+
+	switch (GetDistanceTypeToTarget())
+	{
+	case EDistance::E_FLAT_SNEAR:
+		NearTime += DeltaSeconds;
+		break;
+
+	default:
+		NearTime = 0;
+		break;
+	}
 }
 
 
 
-void ABaseMonster::Dead()
+void ABaseMonster::Dead(bool bClearHealth)
 {
-	Super::Dead();
+	Super::Dead(bClearHealth);
 	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::Dead"));
 	Target = nullptr;
 	UBaseGameInstance* GI = Cast<UBaseGameInstance>(GetGameInstance());
@@ -113,19 +129,6 @@ float ABaseMonster::AcceptDamage(float Damage, float Penetrate)
 
 
 
-void ABaseMonster::CalNearTime()
-{
-	if(!IsValid(GetTarget())) return;
-
-	if (GetDistanceTypeToTarget() == EDistance::E_FLAT_NEAR)
-	{
-		NearTime += DeltaSeconds;
-	}
-	else
-	{
-		NearTime = 0;
-	}
-}
 
 FRotator ABaseMonster::GetRotationToCharacter()
 {
@@ -155,13 +158,30 @@ bool ABaseMonster::RotateToCharacter()
 
 void ABaseMonster::Stiff()
 {
-	if(IsDead()) return;
+	if(IsDead() || IsStoic()) return;
 
 	if ((StiffCount / MaxHealth) > StiffSpawn)
 	{
 		PlayMontage("Stiff");
 		StiffCount = 0;
+		// 获得霸体时间
+		SetStoic(5);
 	}
+}
+
+void ABaseMonster::SetStoic(float Time)
+{
+	UWorld* World = GetWorld();
+	if (World) {
+		if (!World->GetTimerManager().IsTimerActive(StoicTimer)) {
+			World->GetTimerManager().SetTimer(StoicTimer, Time, false);
+		}
+	}
+}
+bool ABaseMonster::IsStoic()
+{
+	UWorld* World = GetWorld();
+	return World && World->GetTimerManager().IsTimerActive(StoicTimer);
 }
 
 

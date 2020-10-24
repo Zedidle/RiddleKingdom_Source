@@ -25,8 +25,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class ABaseDeputy* Deputy = nullptr;
 
-	class UDataTable* WeaponTable = nullptr;
-	class UDataTable* DeputyTable = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		AActor* CommunicateActor = nullptr;
@@ -143,7 +141,7 @@ public:
 
 	virtual float AcceptDamage(float Damage, float Penetrate = 0) override;
 	
-	virtual void Dead() override;
+	virtual void Dead(bool bClearHealth = true) override;
 
 
 	UFUNCTION(BlueprintCallable)

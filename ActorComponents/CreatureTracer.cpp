@@ -61,11 +61,11 @@ void UCreatureTracer::OnHit(bool bHit)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UCreatureTracer::OnHit: %s"), *HitResult.Actor->GetName());
+		//UE_LOG(LogTemp, Warning, TEXT("UCreatureTracer::OnHit: %s"), *HitResult.Actor->GetName());
 		Creature = Cast<ABaseCreature>(HitResult.Actor);
 		if (IsValid(Creature))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("UCreatureTracer::OnHit SetTarget: %s"), *HitResult.Actor->GetName());
+			//UE_LOG(LogTemp, Warning, TEXT("UCreatureTracer::OnHit SetTarget: %s"), *HitResult.Actor->GetName());
 			// 尽管转为ABaseCreature，在virtual的作用下，实际上还是会从子类跑起 SetTarget。
 			// 表面上跳转直接到ABaseCreature的SetTarget，只是编辑器的误导，不能过于迷信编辑器！！
 			Owner->SetTarget(Creature);

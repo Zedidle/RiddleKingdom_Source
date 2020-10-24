@@ -16,6 +16,8 @@ class RPGTUTORIAL_API UBaseAnimInstance : public UAnimInstance
 	
 
 public:
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Speed;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

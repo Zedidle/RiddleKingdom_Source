@@ -13,23 +13,20 @@
 ABaseSkill::ABaseSkill()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::ABaseSkill"));
+
 }
-
-
-ABaseSkill::ABaseSkill(ESkillType Type, ABaseCreature* User, ABaseCreature* Target)
-{
-	PrimaryActorTick.bCanEverTick = true;
-	UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::ABaseSkill 222"));
-	SkillType = Type;
-	SkillUser = User;
-	Target = Target;
-}
-
 
 // Called when the game starts or when spawned
 void ABaseSkill::BeginPlay()
 {
 	Super::BeginPlay();
+	UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::BeginPlay"));
+	if (IsValid(SkillUser))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::BeginPlay SkillUser IsValid"));
+		SkillUser->AddSkillOnUsing(this);
+	}
 	
 }
 
@@ -42,9 +39,11 @@ void ABaseSkill::Tick(float DeltaTime)
 
 void ABaseSkill::SetSkillInfo(ESkillType Type, ABaseCreature* User)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::SetSkillInfo"));
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::SetSkillInfo"));
 	SkillType = Type;
 	SkillUser = User;
+	User->AddSkillOnUsing(this);
+
 }
 
 EFaction ABaseSkill::GetFaction()
@@ -56,6 +55,26 @@ EFaction ABaseSkill::GetFaction()
 	else
 	{
 		return EFaction::E_None;
+	}
+}
+
+void ABaseSkill::AddChildSkill(ABaseSkill* Skill)
+{
+	if (IsValid(Skill))
+	{
+		ChildSkills.AddUnique(Skill);
+	}
+}
+
+void ABaseSkill::K2_DestroyActor()
+{
+	Super::K2_DestroyActor();
+	for (auto& Skill : ChildSkills)
+	{
+		if (IsValid(Skill))
+		{
+			Skill->K2_DestroyActor();
+		}
 	}
 }
 

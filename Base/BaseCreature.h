@@ -9,6 +9,7 @@
 #include "BaseWeapon.h"
 #include "BaseDeputy.h"
 #include "ActionInterface.h"
+#include "BaseSkill.h"
 #include "BaseCreature.generated.h"
 
 
@@ -32,11 +33,28 @@ public:
 	//FComboIndex ComboIndex;
 	TMap<FString, int> ComboIndex;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<ABaseSkill*> SkillsOnUsing;
+
+	UFUNCTION(BlueprintCallable)
+	void AddSkillOnUsing(ABaseSkill* Skill);
 
 public:
+	// false: 用于适配没有打横走（只有1D AnimBS）的角色，
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float BaseSpringArmLength = 400;
+		bool bLockToTarget = true;  
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float UnitDistance = 100; // 最近的攻击距离
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool bBeenControlled = false; // 是否被玩家控制过
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FVector PosStartInWorld = FVector(); // 放置在世界才有用到，在Begin获取其当前位置来设置，用于Reset重置
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float BaseSpringArmLength = 400;  // 由于每个Creature的大小都不同，需要在蓝图独自设定
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float CommunicatePressTime = 0;
@@ -73,6 +91,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void InitDilation();
 
+
+	void PossessedBy(AController* NewController) override;
+
 	// 所有操作定义
 	UFUNCTION()
 		virtual void JumpPress();
@@ -103,6 +124,11 @@ public:
 	UFUNCTION()
 		void NearView();
 
+	UFUNCTION(BlueprintCallable)
+	void ResetSave();
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_ResetSave();
+
 
 	UFUNCTION()
 		virtual void Communicate();
@@ -129,11 +155,19 @@ public:
 	UFUNCTION()
 		virtual void LookUp(float Amount);
 
-protected:
+	
+
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class ABaseCreature* Target = nullptr;
 
-	class ABaseWeapon* TargetWeapon = nullptr;
+	class ABaseWeapon* Weapon = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<APawn> C_SpriteIntrudePawn = nullptr;
+
+	UFUNCTION(BlueprintCallable)
+	bool CanBeIntrude();
 
 	// 基础变量设置
 	UPROPERTY(BlueprintReadOnly)
@@ -155,14 +189,12 @@ protected:
 		float CurStamina = 95;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float MaxStamina = 100;
+	// 每秒恢复体力
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float StaminaRegen = 1;	// 每秒恢复体力
+		float StaminaRegen = 1;	
+	// 防御力
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int Defense = 5;	// 防御力
-
-
-	UFUNCTION()
-		void Falling();
+		int Defense = 5;	
 
 	// 计时器部分
 	FTimerHandle DilationTimer;
@@ -212,11 +244,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		bool ShowHUD = true;
 
+
 	// 基础生命部分
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool bWithoutPlayerControlled = false;  // 是否失去了玩家的控制
 	UFUNCTION(BlueprintCallable)
 		bool IsDead();
 	UFUNCTION(BlueprintCallable)
-		virtual void Dead();
+		virtual void Dead(bool bClearHealth = true);
 	UFUNCTION(BlueprintImplementableEvent)
 		void BP_Dead();
 
@@ -225,14 +260,13 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 		void BP_Revive();
 	
-	UFUNCTION()
-		void Regen();
+
 	
 
 	UFUNCTION(BlueprintCallable)
 	virtual	float AcceptDamage(float Damage, float Penetrate = 0);
 	UFUNCTION(BlueprintImplementableEvent)
-		void BP_AcceptDamage();
+		void BP_AcceptDamage(float TrueDamage);
 
 
 	UFUNCTION(BlueprintCallable)
@@ -274,13 +308,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 		bool IsInvincible();
 
+
+
 	UFUNCTION(BlueprintCallable)
 		virtual void SetTarget(ABaseCreature* C);
 	UFUNCTION(BlueprintCallable)
 		ABaseCreature* GetTarget();
 
-
-
+	UFUNCTION(BlueprintCallable)
+		void IntrudeTarget(ABaseCreature* Creature);
 
 protected:
 	// Called when the game starts or when spawned
@@ -289,6 +325,17 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	UFUNCTION()
+	void Tick_Regen();
+	UFUNCTION()
+		void Tick_LockToFaceTarget();
+	UFUNCTION()
+		void Tick_CalFalling();
+
+
+
+
+
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

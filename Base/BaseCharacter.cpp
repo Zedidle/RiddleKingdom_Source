@@ -3,6 +3,7 @@
 
 #include "BaseCharacter.h"
 #include "Components/InputComponent.h"
+#include "BaseGameInstance.h"
 #include "BaseAnimInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -79,13 +80,17 @@ void ABaseCharacter::LoadEquip()
 
 void ABaseCharacter::LoadWeapon(FString WeaponID)
 {
-	if (WeaponID == "0" || !IsValid(WeaponTable)) return;
+	UBaseGameInstance* GameInstance = Cast<UBaseGameInstance>(GetGameInstance());
+	if (!IsValid(GameInstance)) return;
+	UDataTable* DT_Weapon = GameInstance->DT_Weapon;
+
+	if (WeaponID == "0" || !IsValid(DT_Weapon)) return;
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadWeapon WeaponID:%s"), *CurWeaponID);
 
 	CurWeaponID = WeaponID;
 	FName RowName = FName(*CurWeaponID);
 	FString ContextString;
-	FWeapon* Row = WeaponTable->FindRow<FWeapon>(RowName, ContextString);
+	FWeapon* Row = DT_Weapon->FindRow<FWeapon>(RowName, ContextString);
 
 	if (Row)
 	{	
@@ -111,26 +116,35 @@ void ABaseCharacter::LoadWeapon(FString WeaponID)
 
 void ABaseCharacter::LoadDeputy(FString DeputyID)
 {
-	if (DeputyID == "0" || !IsValid(DeputyTable)) return;
+	UBaseGameInstance* GameInstance = Cast<UBaseGameInstance>(GetGameInstance());
+	if (!IsValid(GameInstance)) return;
+	UDataTable* DT_Deputy = GameInstance->DT_Weapon;
+
+	if (DeputyID == "0" || !IsValid(DT_Deputy)) return;
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy DeputyID:%s"), *CurDeputyID);
 	CurDeputyID = DeputyID;
 	FName RowName = FName(*CurDeputyID);
 	FString ContextString;
-	FDeputy* Row = DeputyTable->FindRow<FDeputy>(RowName, ContextString);
-	if (Row)
+	FDeputy* Row = DT_Deputy->FindRow<FDeputy>(RowName, ContextString);
+
+	if(Row)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy 111"));
 		TSubclassOf<ABaseDeputy> SubDeputyClass = LoadClass<ABaseDeputy>(nullptr, *Row->DeputyActorPath);
 		if (SubDeputyClass != nullptr)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy 222"));
+
 			if (Deputy) {
 				Deputy->Destroy();
 			}
 			Deputy = GetWorld()->SpawnActor<ABaseDeputy>(SubDeputyClass);
 			if (Deputy)
 			{
+				UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy 333"));
 				FAttachmentTransformRules Rules = FAttachmentTransformRules(EAttachmentRule::KeepRelative, false);
-				Deputy->AttachToComponent(GetMesh(), Rules, "DeputyHold");
 				Deputy->User = this;
+				Deputy->AttachToComponent(GetMesh(), Rules, "DeputyHold");
 			}
 		}
 	}
@@ -158,7 +172,7 @@ void ABaseCharacter::OnAttackChanged(bool Enable)
 
 void ABaseCharacter::OnAttackDamageEnableChanged(bool Enable)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnDeputyComboEnableChanged"));
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::OnDeputyComboEnableChanged"));
 	if (Enable)
 	{
 		if (IsValid(Weapon))
@@ -284,9 +298,6 @@ void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	SetMovement(2, 2);
-
-	WeaponTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Weapon_DataTable.Weapon_DataTable'"));
-	DeputyTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/Deputy_DataTable.Deputy_DataTable'"));
 	LoadEquip();
 }
 
@@ -375,9 +386,9 @@ float ABaseCharacter::AcceptDamage(float Damage, float Penetrate)
 }
 
 
-void ABaseCharacter::Dead()
+void ABaseCharacter::Dead(bool bClearHealth)
 {
-	Super::Dead();
+	Super::Dead(bClearHealth);
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::Dead"));
 }
 

@@ -48,6 +48,10 @@ public:
 	EMonsterLevel MonsterLevel = EMonsterLevel::E_Normal;
 
 
+	FTimerHandle StoicTimer;
+
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -56,8 +60,18 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	void Tick_CalNearTime();
 
-	virtual void Dead() override;
+
+
+
+
+
+
+
+
+
+	virtual void Dead(bool bClearHealth = true) override;
 
 	// 定义SeePawn的回调
 	UFUNCTION()
@@ -75,11 +89,12 @@ public:
 
 	virtual float AcceptDamage(float Damage, float Penetrate=0) override;
 	
+	UFUNCTION()
+	void SetStoic(float Time);
+	UFUNCTION()
+	bool IsStoic();
 
-	
 
-	UFUNCTION(BlueprintCallable)
-	void CalNearTime();
 
 	UFUNCTION(BlueprintCallable)
 	FRotator GetRotationToCharacter();
