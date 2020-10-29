@@ -102,7 +102,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool RotateToCharacter();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsAnger();
 	UFUNCTION(BlueprintCallable)
 	void SetAngerCount(float Count);

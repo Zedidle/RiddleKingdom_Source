@@ -17,6 +17,21 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 
+	// SaveData
+	public:
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerInfo")
+			FString PlayerName = FString("Zedidle");
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerInfo")
+			int PlayerIndex = 0;
+
+		UFUNCTION(BlueprintCallable)
+			void SetPlayerData(FString Name, int Index);
+
+		UFUNCTION(BlueprintCallable)
+			void SaveGame(UBaseSaveGame* SG, FString Name="", int Index = 0);
+
+		UFUNCTION(BlueprintCallable)
+			UBaseSaveGame* LoadGame(FString Name="", int Index = -1);
 
 
 	public:
@@ -26,11 +41,15 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 			class UDataTable* DT_Deputy = nullptr;
 
 		UPROPERTY(BlueprintReadOnly)
-		TArray<ABaseCreature*> CreatureUsed;
+		TArray<FString> CreatureUsed;
 
 
 		UPROPERTY(BlueprintReadOnly)
 		class ABaseMonster* CurBoss = nullptr;
+
+		UPROPERTY(BlueprintReadOnly)
+		class UUserWidget* ShootAimHUD = nullptr;
+
 		UPROPERTY(BlueprintReadOnly)
 		class UUserWidget* BossHealthHUD = nullptr;
 		UPROPERTY(BlueprintReadOnly)
@@ -41,8 +60,12 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 		class UUserWidget* EquipInfoHUD = nullptr;
 		UPROPERTY(BlueprintReadOnly)
 		class UUserWidget* DeadHUD = nullptr;
+		UPROPERTY(BlueprintReadOnly)
+		class UUserWidget* KeyDeadHUD = nullptr;
+		
 
-
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+			TSubclassOf<UUserWidget> C_ShootAimHUD = nullptr;
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
 			TSubclassOf<UUserWidget> C_BossHealth = nullptr;
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -53,6 +76,8 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 			TSubclassOf<UUserWidget> C_EquipInfoHUD = nullptr;
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
 			TSubclassOf<UUserWidget> C_DeadHUD = nullptr;
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+			TSubclassOf<UUserWidget> C_KeyDeadHUD = nullptr;
 
 	public:
 		UFUNCTION(BlueprintCallable)
@@ -62,12 +87,14 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 		void PopCreatureUsed();
 
 		UFUNCTION(BlueprintCallable)
+		ABaseCreature* GetLastCreatureUsed(int Index = 0);
+
+		UFUNCTION(BlueprintCallable, BlueprintPure)
 		ABaseCreature* GetCurCreatureUsed();
 
-
-
-
-
+		
+		UFUNCTION(BlueprintCallable)
+			void ShowShootAimHUD(bool bShow);
 
 		UFUNCTION(BlueprintCallable)
 		void SetCurBoss(ABaseMonster* M);
@@ -86,5 +113,8 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 
 		UFUNCTION(BlueprintCallable)
 		void ShowDeadHUD(bool bShow);
+
+		UFUNCTION(BlueprintCallable)
+		void ShowKeyDeadHUD(bool bShow);
 		
 };

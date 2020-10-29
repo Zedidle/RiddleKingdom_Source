@@ -55,7 +55,8 @@ void ABaseCreature::AddSkillOnUsing(ABaseSkill* Skill)
 
 bool ABaseCreature::IsPlayerControlling()
 {
-	return GetController() == UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	return IsPlayerControlled();
+	//return GetController() == UGameplayStatics::GetPlayerController(GetWorld(), 0);
 }
 
 void ABaseCreature::ActionModes()
@@ -145,9 +146,12 @@ void ABaseCreature::PossessedBy(AController* NewController)
 	{
 		if (NewController == UGameplayStatics::GetPlayerController(GetWorld(), 0))
 		{
+			UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PossessedBy 0"));
+			Revive();
 			bBeenControlled = true;
 			EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
 			GameInstance->AddCreatureUsed(this);
+			GameInstance->ShowShootAimHUD(bShowShootAnim);
 		}
 	}
 }
@@ -181,6 +185,7 @@ void ABaseCreature::Tick(float DeltaTime)
 	bAI = !IsPlayerControlling();
 	DeltaSeconds = DeltaTime;
 	Tick_Regen();
+	Tick_MoveToTarget();
 	Tick_LockToFaceTarget();
 	Tick_CalFalling();
 }
@@ -229,6 +234,27 @@ void ABaseCreature::Tick_LockToFaceTarget()
 	FRotator ControlRotation = GetController()->GetControlRotation();
 	FRotator ControlLerpRotator = Math::RLerp(ControlRotation, RotationToTarget, 0.05, true);
 	GetController()->SetControlRotation(FRotator(ControlRotation.Pitch, ControlLerpRotator.Yaw, ControlRotation.Roll));
+}
+
+void ABaseCreature::Tick_MoveToTarget(float Time, float SpeedMulti)
+{
+	if (Time > 0)
+	{
+		Time_MoveToTarget = Time;
+		SetMovement(SpeedMulti);
+	}
+	if (Time_MoveToTarget <= 0) return;
+	Time_MoveToTarget -= DeltaSeconds;
+
+	if (IsValid(Target))
+	{
+		if (GetDistanceTypeToTarget() != EDistance::E_FLAT_SNEAR)
+		{
+			FVector V = Math::GetForwardVector(Math::FindLookAtRotation(GetActorLocation(), Target->GetActorLocation()));
+			AddMovementInput(V, 1, false);
+		}
+	}
+	BP_Tick_MoveToTarget();
 }
 
 void ABaseCreature::Tick_CalFalling()
@@ -312,19 +338,19 @@ EDistance ABaseCreature::GetDistanceTypeToTarget()
 	{
 		if (Target->IsFalling())
 		{
-			if (0 <= DistZ && DistZ < 1.5)
+			if (0 <= DistZ_Unit && DistZ_Unit < 1.5)
 			{
 				return EDistance::E_PLUMB_NEAR;
 			}
-			else if (1.5 <= DistZ && DistZ < 3)
+			else if (1.5 <= DistZ_Unit && DistZ_Unit < 3)
 			{
 				return EDistance::E_PLUMB_MID;
 			}
-			else if (3 <= DistZ && DistZ < 5)
+			else if (3 <= DistZ_Unit && DistZ_Unit < 5)
 			{
 				return EDistance::E_PLUMB_FAR;
 			}
-			else if (5 <= DistZ)
+			else if (5 <= DistZ_Unit)
 			{
 				return EDistance::E_PLUMB_SFAR;
 			}
@@ -340,7 +366,7 @@ EDistance ABaseCreature::GetDistanceTypeToTarget()
 			{
 				return EDistance::E_FLAT_NEAR;
 			}
-			else if (1.5 * UnitDistance <= DistXY_Unit && DistXY_Unit < 5)
+			else if (1.5 <= DistXY_Unit && DistXY_Unit < 5)
 			{
 				return EDistance::E_FLAT_MID;
 			}
@@ -356,19 +382,19 @@ EDistance ABaseCreature::GetDistanceTypeToTarget()
 	}
 	else
 	{
-		if (0 <= DistZ && DistZ < 1.5)
+		if (0 <= DistZ_Unit && DistZ_Unit < 1.5)
 		{
 			return EDistance::E_PLUMB_NEAR;
 		}
-		else if (1.5 <= DistZ && DistZ < 3)
+		else if (1.5 <= DistZ_Unit && DistZ_Unit < 3)
 		{
 			return EDistance::E_PLUMB_MID;
 		}
-		else if (3 <= DistZ && DistZ < 5)
+		else if (3 <= DistZ_Unit && DistZ_Unit < 5)
 		{
 			return EDistance::E_PLUMB_FAR;
 		}
-		else if (5 <= DistZ)
+		else if (5 <= DistZ_Unit)
 		{
 			return EDistance::E_PLUMB_SFAR;
 		}
@@ -379,14 +405,13 @@ EDistance ABaseCreature::GetDistanceTypeToTarget()
 
 bool ABaseCreature::IsDead()
 {
-	return CurHealth <= 0 && bWithoutPlayerControlled;
+	return CurHealth <= 0;
 }
 
 void ABaseCreature::Dead(bool bClearHealth)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Dead"));
 	// bClearHeal决定是死亡还是脱离玩家控制
-	bWithoutPlayerControlled = true;
 
 	if (bClearHealth)
 	{
@@ -399,11 +424,18 @@ void ABaseCreature::Dead(bool bClearHealth)
 	if (GameInstance->GetCurCreatureUsed() == this)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Dead 000"));
-
-		DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
-		GameInstance->ShowDeadHUD(true);
+		APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+		PlayerController->UnPossess();
+		if (!bLevelKey)
+		{
+			GameInstance->ShowDeadHUD(true);
+		}
+		else
+		{
+			GameInstance->ShowKeyDeadHUD(true);
+		}
 	}
-	SetMovement(2,2,EMovementMode::MOVE_Falling);
+	SetMovement(2, 2, EMovementMode::MOVE_Falling);
 	PlayMontage("Dead");
 	BP_Dead();
 }
@@ -411,19 +443,20 @@ void ABaseCreature::Dead(bool bClearHealth)
 void ABaseCreature::Revive()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Revive"));
-	bWithoutPlayerControlled = false;
 	if (!bBeenControlled)
 	{
 		CurHealth = MaxHealth;
 	}
-	if (UGameplayStatics::GetPlayerCharacter(GetWorld(), 0) == this)
+	//if (UGameplayStatics::GetPlayerCharacter(GetWorld(), 0) == this)
+	if (IsPlayerControlling())
 	{
-		bAI = false;
+		UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Revive 0"));
 		EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
 	}
 	IsLocking = false;
 	GetMesh()->GetAnimInstance()->Montage_Resume(nullptr);
 	PlayMontage("Revive");
+	BP_Revive();
 }
 
 
@@ -444,6 +477,11 @@ float ABaseCreature::AcceptDamage(float Damage, float Penetrate)
 
 
 	if (IsInvincible() || IsDead()) return 0;
+	if( IsTrueDead() ) return 0;
+	if (bBeenControlled && !IsPlayerControlling()) return 0;
+	// 后面还要考虑侵入盟友后，盟友自己控制的情况
+
+
 	float TrueDefense = Math::Max(Defense - Penetrate, 0);
 	Damage = Damage * 100 / (TrueDefense + 100);
 
@@ -599,6 +637,10 @@ void ABaseCreature::Dodge()
 		{
 			PlayMontage("Dodge", "Climbing");
 		}
+		else if (AnimInstance->ForwardSpeed < 0)
+		{
+			PlayMontage("Dodge", "Backward");
+		}
 		else if (AnimInstance->RightSpeed < -100)
 		{
 			PlayMontage("Dodge", "Left");
@@ -606,10 +648,6 @@ void ABaseCreature::Dodge()
 		else if (AnimInstance->RightSpeed > 100)
 		{
 			PlayMontage("Dodge", "Right");
-		}
-		else if (AnimInstance->ForwardSpeed < 0)
-		{
-			PlayMontage("Dodge", "Backward");
 		}
 		else
 		{
@@ -729,19 +767,35 @@ void ABaseCreature::LookUp(float Amount)
 	AddControllerPitchInput(Amount);
 }
 
-bool ABaseCreature::CanBeIntrude()
+bool ABaseCreature::CanBeIntrude(ABaseCreature* Intruder)
 {
+	// 未被玩家控制过，且死过一次
 	if (!bBeenControlled && CurHealth <= 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::CanBeIntrude 111"));
 		return true;
 	}
+	// 被玩家控制过，且主动脱离
 	else if (bBeenControlled && CurHealth > 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::CanBeIntrude 222"));
 		return true;
 	}
+	// 相同阵营
+	else if (IsValid(Intruder) && Intruder->Faction == Faction)
+	{
+		return !IsTrueDead();
+	}
+	// 精灵相关
+	else if (CreatureID == "000") 
+	{
+		return true;
+	}
+
 	return false;
+}
+
+bool ABaseCreature::IsTrueDead()
+{
+	return bBeenControlled && CurHealth <= 0;
 }
 
 void ABaseCreature::MontageStart(UAnimMontage* Montage)
@@ -768,12 +822,20 @@ float ABaseCreature::GetStaminaPercent()
 }
 
 
-void ABaseCreature::SetInvincible(float Time)
+void ABaseCreature::SetInvincible(float Time, bool bForce)
 {
 	UWorld* World = GetWorld();
 	if (World) {
-		if (!World->GetTimerManager().IsTimerActive(InvincibleTimer)) {
+		if (bForce)
+		{
+			World->GetTimerManager().ClearTimer(InvincibleTimer);
 			World->GetTimerManager().SetTimer(InvincibleTimer, Time, false);
+		}
+		else
+		{
+			if (!World->GetTimerManager().IsTimerActive(InvincibleTimer)) {
+				World->GetTimerManager().SetTimer(InvincibleTimer, Time, false);
+			}
 		}
 	}
 }
@@ -786,7 +848,10 @@ bool ABaseCreature::IsInvincible()
 void ABaseCreature::SetTarget(ABaseCreature* C)
 {
 	//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::SetTarget: %s"), *C->GetName());
-	Target = C;
+	if (C != this)
+	{
+		Target = C;
+	}
 }
 ABaseCreature* ABaseCreature::GetTarget()
 {
@@ -801,21 +866,25 @@ void ABaseCreature::IntrudeTarget(ABaseCreature* Creature)
 		Target = Creature;
 	}
 	if(!IsValid(Target)) return;
-	if (!IsValid(C_SpriteIntrudePawn)) return;
-	
-	if (Target->CanBeIntrude() || Faction == Target->Faction || Target->CreatureID == "000")
-	{
-		FTransform PT = GetTransform_ProjectileToTarget();
-		PT.SetLocation(GetActorLocation());
-		APawn* SpriteIntrudePawn = GetWorld()->SpawnActor<APawn>(C_SpriteIntrudePawn, PT);
-		if (SpriteIntrudePawn)
-		{
-			APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-			PlayerController->SetViewTargetWithBlend(SpriteIntrudePawn, 1);
 
-			// 到头来还是要在新建的IntrudeSpriteAIController设定OnMoveCompeleted方法。
-			UAIBlueprintHelperLibrary::CreateMoveToProxyObject(GetWorld(), SpriteIntrudePawn, FVector(), Target);
-		}
+	if (Target->CanBeIntrude(this))
+	{
+		IntrudingTarget = Target;
+		BP_IntrudeTarget();
+
+		//if (IsValid(C_SpriteIntrudePawn))
+		//{
+		//	FTransform PT = GetTransform_ProjectileToTarget();
+		//	PT.SetLocation(GetActorLocation());
+		//	ABaseSkill* SpriteIntrudePawn = GetWorld()->SpawnActor<ABaseSkill>(C_SpriteIntrudePawn, PT);
+		//	if (SpriteIntrudePawn)
+		//	{
+		//		APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+		//		PlayerController->SetViewTargetWithBlend(SpriteIntrudePawn, 1);
+		//		// 到头来还是要在新建的IntrudeSpriteAIController设定OnMoveCompeleted方法。
+		//		UAIBlueprintHelperLibrary::CreateMoveToProxyObject(GetWorld(), SpriteIntrudePawn, FVector(), Target);
+		//	}
+		//}
 	}
 }
 
@@ -911,10 +980,15 @@ bool ABaseCreature::NeedQuickRotate()
 	return false;
 }
 
-FTransform ABaseCreature::GetTransform_ProjectileToTarget()
+// Target: 强制指向的对象
+FTransform ABaseCreature::GetTransform_ProjectileToTarget(ABaseCreature* _Target)
 {
 	FVector EndPoint;
-	if (bAI && IsValid(Target))
+	if (IsValid(_Target))
+	{
+		EndPoint = _Target->GetActorLocation();
+	}
+	else if (bAI && IsValid(Target))
 	{
 		EndPoint = Target->GetActorLocation();
 	}
@@ -922,6 +996,7 @@ FTransform ABaseCreature::GetTransform_ProjectileToTarget()
 	{
 		EndPoint = Camera->GetComponentLocation() + Math::GetForwardVector(Camera->GetComponentRotation()) * 10000;
 	}
+
 
 	FVector Location = GetMesh()->GetSocketLocation(FName("Fire_Start"));
 	FRotator Rotator = Math::FindLookAtRotation(Location, EndPoint);

@@ -95,7 +95,7 @@ void ABaseCharacter::LoadWeapon(FString WeaponID)
 	if (Row)
 	{	
 		TSubclassOf<ABaseWeapon> SubWeaponClass = LoadClass<ABaseWeapon>(nullptr, *Row->WeaponActorPath);
-		UE_LOG(LogTemp, Warning, TEXT("Weapon->LoadWeapon 111"));
+		UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadWeapon 1"));
 		if (SubWeaponClass != nullptr)
 		{
 			if (IsValid(Weapon)) {
@@ -108,6 +108,7 @@ void ABaseCharacter::LoadWeapon(FString WeaponID)
 				Weapon->SetCurAbility(Attributes);
 				Weapon->User = this;
 				Weapon->AttachToComponent(GetMesh(), Rules, "WeaponHold");
+				GameInstance->ShowShootAimHUD(Weapon->bShowShootAnim);
 			}
 		}
 
@@ -118,7 +119,7 @@ void ABaseCharacter::LoadDeputy(FString DeputyID)
 {
 	UBaseGameInstance* GameInstance = Cast<UBaseGameInstance>(GetGameInstance());
 	if (!IsValid(GameInstance)) return;
-	UDataTable* DT_Deputy = GameInstance->DT_Weapon;
+	UDataTable* DT_Deputy = GameInstance->DT_Deputy;
 
 	if (DeputyID == "0" || !IsValid(DT_Deputy)) return;
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy DeputyID:%s"), *CurDeputyID);
@@ -130,15 +131,15 @@ void ABaseCharacter::LoadDeputy(FString DeputyID)
 	if(Row)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy 111"));
-		TSubclassOf<ABaseDeputy> SubDeputyClass = LoadClass<ABaseDeputy>(nullptr, *Row->DeputyActorPath);
-		if (SubDeputyClass != nullptr)
+		TSubclassOf<ABaseDeputy> C_SubDeputy = LoadClass<ABaseDeputy>(nullptr, *Row->DeputyActorPath);
+		if (C_SubDeputy != nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy 222"));
 
 			if (Deputy) {
 				Deputy->Destroy();
 			}
-			Deputy = GetWorld()->SpawnActor<ABaseDeputy>(SubDeputyClass);
+			Deputy = GetWorld()->SpawnActor<ABaseDeputy>(C_SubDeputy);
 			if (Deputy)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy 333"));

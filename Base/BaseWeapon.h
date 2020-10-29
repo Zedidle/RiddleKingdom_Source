@@ -29,7 +29,9 @@ private:
 	
 
 public:
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool bShowShootAnim = false;  // 是否显示准心
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float WeaponCore = 1;  // 武器核心 提升所有能力加成 1 - 3
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

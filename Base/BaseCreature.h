@@ -39,7 +39,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void AddSkillOnUsing(ABaseSkill* Skill);
 
+	UPROPERTY(BlueprintReadOnly)
+	class ABaseCreature* IntrudingTarget = nullptr;
+
 public:
+	// 是否为关卡关键角色，需要放到场景后再设置
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool bLevelKey = false;  
+
 	// false: 用于适配没有打横走（只有1D AnimBS）的角色，
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		bool bLockToTarget = true;  
@@ -62,7 +69,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) 
 		bool bAI = false;
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		bool IsPlayerControlling();
 
 	// 是否处于战斗状态
@@ -164,10 +171,14 @@ public:
 	class ABaseWeapon* Weapon = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<APawn> C_SpriteIntrudePawn = nullptr;
+	TSubclassOf<ABaseSkill> C_SpriteIntrudePawn = nullptr;
 
-	UFUNCTION(BlueprintCallable)
-	bool CanBeIntrude();
+	UFUNCTION(BlueprintPure)
+	bool CanBeIntrude(ABaseCreature* Intruder);
+
+	// 是否已消亡
+	UFUNCTION(BlueprintPure)
+	bool IsTrueDead(); 
 
 	// 基础变量设置
 	UPROPERTY(BlueprintReadOnly)
@@ -230,7 +241,13 @@ public:
 	float BaseRotationRateZ = 120;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Time_MoveToTarget = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EFaction Faction = EFaction::E_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool bShowShootAnim = false;  // 是否显示准心
 
 	// 作用仅仅是将角色和镜头的转向锁定到Target
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -238,7 +255,7 @@ public:
 
 	// 战斗时是否给对方显示血条
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool ShowBlood = false;
+		bool bShowBlood = false;
 
 	// 是否显示状态栏，影响复活后的角色界面，也是可以直接绑定。
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -246,9 +263,7 @@ public:
 
 
 	// 基础生命部分
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool bWithoutPlayerControlled = false;  // 是否失去了玩家的控制
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		bool IsDead();
 	UFUNCTION(BlueprintCallable)
 		virtual void Dead(bool bClearHealth = true);
@@ -274,15 +289,15 @@ public:
 
 
 	// 运动状态判断
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		bool IsFalling();
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		bool IsFlying();
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		bool IsGround();
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		bool IsSwimming();
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		bool IsClimbing();
 	UFUNCTION(BlueprintCallable)
 		void SetClimbing(bool b);
@@ -297,15 +312,15 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 		void BP_MontageEnd(UAnimMontage* Montage, bool bInterrupted);
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		float GetHealthPercent();
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		float GetStaminaPercent();
 		
 	// 设置/判断 无敌
 	UFUNCTION(BlueprintCallable)
-		void SetInvincible(float Time);
-	UFUNCTION(BlueprintCallable)
+		void SetInvincible(float Time, bool bForce=false);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		bool IsInvincible();
 
 
@@ -317,6 +332,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 		void IntrudeTarget(ABaseCreature* Creature);
+	UFUNCTION(BlueprintImplementableEvent)
+		void BP_IntrudeTarget();
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -326,9 +344,14 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	UFUNCTION()
-	void Tick_Regen();
+		void Tick_Regen();
 	UFUNCTION()
 		void Tick_LockToFaceTarget();
+	UFUNCTION(BlueprintCallable)
+		void Tick_MoveToTarget(float Time = 0, float SpeedMulti=2);
+	UFUNCTION(BlueprintImplementableEvent)
+		void BP_Tick_MoveToTarget();
+
 	UFUNCTION()
 		void Tick_CalFalling();
 
@@ -349,6 +372,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 		bool NeedQuickRotate();
 
-	UFUNCTION(BlueprintCallable)
-		FTransform GetTransform_ProjectileToTarget();
+	UFUNCTION(BlueprintPure)
+		FTransform GetTransform_ProjectileToTarget(ABaseCreature* _Target=nullptr);
 };

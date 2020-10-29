@@ -205,7 +205,7 @@ void ABaseMonster::SetTarget(ABaseCreature* C)
 	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget"));
 	// 后面还要考虑AI状态下，Target死亡后如何转移目标（仇恨值、最低生命值）
 	// “当前目标死亡后才能够更换新目标”
-	if (bAI && IsValid(Target) && !Target->IsDead())
+	if (bAI && IsValid(Target) && !Target->IsDead() && Target->IsPlayerControlled())
 	{
 		return;
 	}
