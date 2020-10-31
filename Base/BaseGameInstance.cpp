@@ -74,37 +74,39 @@ UBaseSaveGame* UBaseGameInstance::LoadGame(FString Name, int Index)
 				FString Name = C->GetName();
 				if (CreatureNameToDatas.Contains(Name))
 				{
-					AAIController* AIController = UAIBlueprintHelperLibrary::GetAIController(C);
-					APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+					
 					FCreatureData D = CreatureNameToDatas[Name];
-					UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::LoadGame Creature Name: %s"), *C->GetName());
-					if (D.bPlayerControlling)
-					{
-						PlayerController->Possess(C);
-						C->Revive();
-					}
-					else if (D.bBeenControlled)
-					{
-						if (IsValid(AIController))
-						{
-							AIController->UnPossess();
-						}
-						C->Dead();
-					}
-					else if(D.CurHealth > 0)
-					{
-						if (IsValid(AIController))
-						{
-							AIController->Possess(C);
-						}
-						C->Revive();
-					}
-
+					APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 					C->SetActorLocation(D.WorldLocation);
+					C->SetActorRotation(D.Rotation);
+					C->Faction = D.Faction;
 					C->CurHealth = D.CurHealth;
 					C->MaxHealth = D.MaxHealth;
 					C->bBeenControlled = D.bBeenControlled;
 					C->Target = nullptr;
+					C->ResetSave();
+
+					// 控制中的角色继续控制
+					if (D.bPlayerControlling)
+					{
+						if (!C->IsPlayerControlling())
+						{
+							PlayerController->Possess(C);
+						}
+					}
+					//// 控制过或死亡中的角色，除了原本就是盟友外，失去活动能力
+					else if (D.bBeenControlled || D.CurHealth <= 0)
+					{
+						if (!C->IsPlayerControlling())
+						{
+							C->Dead(); // 可能导致奔溃
+						}
+					}
+					//// 没有控制过且没死过的
+					//else if (D.CurHealth > 0)
+					//{
+					//	C->Revive();
+					//}
 				}
 			}
 		}

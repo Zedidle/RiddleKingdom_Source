@@ -160,5 +160,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 		bool AbilityCanUseWeaponType(EWeaponType WeaponType);
 
+	UFUNCTION(BlueprintCallable)
+		bool AbilityCanUseDeputyType(EDeputyType DeputyType);
+	
 };
 

@@ -76,7 +76,28 @@ bool Util::AbilityCanUseWeaponType(ECharacterAbility Ability, EWeaponType Weapon
 
 
 
+bool Util::AbilityCanUseDeputyType(ECharacterAbility Ability, EDeputyType DeputyType)
+{
+	TMap<ECharacterAbility, TArray<EDeputyType>> Map_AbilityDeputys;
 
+	TArray<EDeputyType> BowDeputys;
+	BowDeputys.Add(EDeputyType::E_Dagger);
+	Map_AbilityDeputys.Add(ECharacterAbility::E_BOW, BowDeputys);
+
+	TArray<EDeputyType> SwordWeapons;
+	SwordWeapons.Add(EDeputyType::E_Shild);
+	Map_AbilityDeputys.Add(ECharacterAbility::E_SWORD, SwordWeapons);
+
+
+	if (Map_AbilityDeputys.Contains(Ability))
+	{
+		return Map_AbilityDeputys[Ability].Contains(DeputyType);
+	}
+	else
+	{
+		return false;
+	}
+}
 
 
 

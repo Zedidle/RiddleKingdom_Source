@@ -36,7 +36,7 @@ ABaseCreature::ABaseCreature()
 	SpringArm->bUsePawnControlRotation = true;
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->SetupAttachment(SpringArm);
-	Camera->SetRelativeLocation(FVector(80, 0, 80));
+	Camera->SetRelativeLocation(FVector(80, 90, 80));
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(90, 90, 120);
@@ -56,7 +56,6 @@ void ABaseCreature::AddSkillOnUsing(ABaseSkill* Skill)
 bool ABaseCreature::IsPlayerControlling()
 {
 	return IsPlayerControlled();
-	//return GetController() == UGameplayStatics::GetPlayerController(GetWorld(), 0);
 }
 
 void ABaseCreature::ActionModes()
@@ -65,7 +64,6 @@ void ABaseCreature::ActionModes()
 	if (!IsValid(GetTarget())) return;  // 没有看到角色
 	if (IsDead()) return;
 	ActionInterval -= DeltaSeconds;
-	//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::ActionModes ActionInterval: %f"), ActionInterval);
 
 	FVector DistVector = GetTarget()->GetActorLocation() - GetActorLocation();
 	float DistXY = Math::VSizeXY(DistVector); // 计算与角色的水平距离
@@ -78,7 +76,6 @@ void ABaseCreature::ActionModes()
 
 	if (ActionInterval < 0)  // 采取行动
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::ActionModes TakeAction"));
 		ActionInterval = 1;
 	}
 }
@@ -146,10 +143,9 @@ void ABaseCreature::PossessedBy(AController* NewController)
 	{
 		if (NewController == UGameplayStatics::GetPlayerController(GetWorld(), 0))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PossessedBy 0"));
-			Revive();
+			//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PossessedBy 0"));
 			bBeenControlled = true;
-			EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
+			Faction = EFaction::E_Character;
 			GameInstance->AddCreatureUsed(this);
 			GameInstance->ShowShootAimHUD(bShowShootAnim);
 		}
@@ -412,27 +408,27 @@ void ABaseCreature::Dead(bool bClearHealth)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Dead"));
 	// bClearHeal决定是死亡还是脱离玩家控制
-
 	if (bClearHealth)
 	{
 		CurHealth = 0;
-
 	}
 	UBaseGameInstance* GameInstance = Cast<UBaseGameInstance>(GetGameInstance());
 	if (!IsValid(GameInstance)) return;
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Dead GetCurCreatureUsed: %s"), *GameInstance->GetCurCreatureUsed()->GetName());
+
 	if (GameInstance->GetCurCreatureUsed() == this)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Dead 000"));
 		APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-		PlayerController->UnPossess();
-		if (!bLevelKey)
+		if (IsPlayerControlling())
 		{
-			GameInstance->ShowDeadHUD(true);
-		}
-		else
-		{
-			GameInstance->ShowKeyDeadHUD(true);
+			if (!bLevelKey)
+			{
+				GameInstance->ShowDeadHUD(true);
+			}
+			else
+			{
+				GameInstance->ShowKeyDeadHUD(true);
+			}
+			PlayerController->UnPossess();
 		}
 	}
 	SetMovement(2, 2, EMovementMode::MOVE_Falling);
@@ -681,9 +677,9 @@ void ABaseCreature::NearView()
 void ABaseCreature::ResetSave()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::ResetSave"));
-	SetActorLocation(PosStartInWorld);
+	//SetActorLocation(PosStartInWorld);
 	GetCharacterMovement()->StopActiveMovement();
-	Revive();
+	//Revive();
 	for(auto& Skill: SkillsOnUsing)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::ResetSave SkillName: %s"), *Skill->GetName());
@@ -769,19 +765,24 @@ void ABaseCreature::LookUp(float Amount)
 
 bool ABaseCreature::CanBeIntrude(ABaseCreature* Intruder)
 {
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::CanBeIntrude"));
+
 	// 未被玩家控制过，且死过一次
 	if (!bBeenControlled && CurHealth <= 0)
 	{
+		//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::CanBeIntrude bDead"));
 		return true;
 	}
 	// 被玩家控制过，且主动脱离
 	else if (bBeenControlled && CurHealth > 0)
 	{
+		//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::CanBeIntrude bBeenControlled"));
 		return true;
 	}
 	// 相同阵营
-	else if (IsValid(Intruder) && Intruder->Faction == Faction)
+	else if (IsValid(Intruder) && SameFaction(Intruder))
 	{
+		//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::CanBeIntrude Faction"));
 		return !IsTrueDead();
 	}
 	// 精灵相关
@@ -894,11 +895,9 @@ bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName,  float Pla
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage Rowname: %s"), *Rowname);
 	if (Rowname == "")	return false;
-	//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage Rowname: 000"));
 	TArray<FString> MontageCanPlayDead = {"Dead", "Revive"};
 	if (!IsValid(CreatureMontageDataTable)) return false;
 	if (!MontageCanPlayDead.Contains(Rowname) && (!CanAction || IsDead())) return false;
-	//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage 111"));
 	int _Index = Rowname.Find("_");
 	FString ActionName;
 	if (_Index > -1)
@@ -909,13 +908,10 @@ bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName,  float Pla
 	{
 		ActionName = Rowname;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage ActionName: %s"), *ActionName);
 
 	FCreatureMontage* CreatureMontage = CreatureMontageDataTable->FindRow<FCreatureMontage>(*Rowname, TEXT("Montage"));
 	if (CreatureMontage && CreatureMontage->Montage) {
 		int32 Num = CreatureMontage->Montage->CompositeSections.Num();
-		UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage Num: %d"), Num);
-
 		if (Num > 0)
 		{
 			int32 Index = 0;
@@ -926,12 +922,10 @@ bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName,  float Pla
 				{
 					ComboIndex[ActionName] = 0;
 				}
-				UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage 000 Index: %d"), Index);
 				if (Index >= Num)
 				{
 					Index = 0;
 				}
-				UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PlayMontage 111 Index: %d"), Index);
 			}
 
 			if (SectionName == "")

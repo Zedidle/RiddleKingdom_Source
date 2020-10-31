@@ -43,6 +43,8 @@ UBaseSaveGame* UBaseSaveGame::SaveCreatureData()
 			 D.CreatureName = Creature->GetName();
 			 D.bPlayerControlling = Creature->IsPlayerControlling();
 			 D.WorldLocation = Creature->GetActorLocation();
+			 D.Rotation = Creature->GetActorRotation();
+			 D.Faction = Creature->Faction;
 			 D.CurHealth = Creature->CurHealth;
 			 D.MaxHealth = Creature->MaxHealth;
 			 D.bBeenControlled = Creature->bBeenControlled;

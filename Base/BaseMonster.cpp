@@ -74,7 +74,7 @@ void ABaseMonster::OnSeePawn(APawn* Pawn)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn"));
 	if (IsDead() || !bAI) return;
-	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn 111"));
+	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn 1"));
 	ABaseCreature* C = Cast<ABaseCreature>(Pawn);
 	if (!IsValid(C) || C->IsDead()) return;
 	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn Name: %s"), *C->GetName());
@@ -84,10 +84,7 @@ void ABaseMonster::OnSeePawn(APawn* Pawn)
 	ACreatureAIController* AIController = Cast<ACreatureAIController>(GetController());
 	if (IsValid(AIController))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn 333"));
-		UBlackboardComponent* BB = AIController->GetBlackboardComponent();
-		BB->SetValueAsObject("TargetActor", C);
-		UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn BB->SetValueAsObject TargetActor"));
+		UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn 2"));
 		if (Faction != C->Faction)
 		{
 			bCombating = true;
@@ -216,6 +213,9 @@ void ABaseMonster::SetTarget(ABaseCreature* C)
 	if (IsValid(GI) && EMonsterLevel::E_Boss == MonsterLevel)
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget Boss"));
-		GI->SetCurBoss(this);
+		if (!IsPlayerControlled())
+		{
+			GI->SetCurBoss(this);
+		}
 	}
 }

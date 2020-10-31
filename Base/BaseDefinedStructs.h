@@ -67,6 +67,7 @@ enum class EMonsterLevel :uint8 // 怪物阶层
 UENUM(BlueprintType)
 enum class ECharacterAbility :uint8 // 角色职业类型
 {
+	E_NONE UMETA(DisplayName = "无"), // 无
 	E_SWORD UMETA(DisplayName = "剑士"), // Sword
 	E_BOW UMETA(DisplayName = "弓手"),	// Bow
 	E_MAGIC UMETA(DisplayName = "法师")	// Magic

@@ -246,8 +246,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EFaction Faction = EFaction::E_None;
 
+	// 是否显示准心,随时都要入侵
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool bShowShootAnim = false;  // 是否显示准心
+		bool bShowShootAnim = true; 
 
 	// 作用仅仅是将角色和镜头的转向锁定到Target
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -363,13 +364,13 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		EDistance GetDistanceTypeToTarget();
 
 	UFUNCTION(BlueprintCallable)
 		bool PlayMontage(FString Rowname, FString SectionName = "", float PlayRate=1.0f);
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		bool NeedQuickRotate();
 
 	UFUNCTION(BlueprintPure)

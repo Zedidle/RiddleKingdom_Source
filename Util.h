@@ -14,4 +14,7 @@ namespace Util
 	FString GetDeputyTypeString(EDeputyType DeputyType, FString Prefix = "");
 
 	bool AbilityCanUseWeaponType(ECharacterAbility Ability, EWeaponType WeaponType);
+	bool AbilityCanUseDeputyType(ECharacterAbility Ability, EDeputyType DeputyType);
+
+	
 };

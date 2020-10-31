@@ -80,27 +80,22 @@ void ABaseSkill::K2_DestroyActor()
 
 bool ABaseSkill::MakeDamage(ABaseCreature* _Target, float ExtraDamage)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::MakeDamage"));
 	if (!IsValid(_Target))
 	{
 		_Target = Target;
 	}
 
 	if(!IsValid(_Target) || _Target->IsDead()) return false;
-	//UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::MakeDamage 000"));
 
 	if (!IsValid(SkillUser))
 	{
 		UE_LOG(LogTemp, Error, TEXT("技能必须设置使用者"));
 		return false;
 	}
-	//UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::MakeDamage 111"));
 
 	if (_Target->Faction != GetFaction())
 	{
 		float AdditionDamage = 0;
-		//UE_LOG(LogTemp, Warning, TEXT("ABaseSkill::MakeDamage 222"));
-
 		if (Cast<ABaseCharacter>(SkillUser))
 		{
 			ABaseWeapon* W = Cast<ABaseCharacter>(SkillUser)->Weapon;
@@ -116,8 +111,9 @@ bool ABaseSkill::MakeDamage(ABaseCreature* _Target, float ExtraDamage)
 
 		float Damage = BaseDamage + ExtraDamage + AdditionDamage;
 		float TrueDamage = _Target->AcceptDamage(Damage);
+		_Target->SetTarget(SkillUser);
+		_Target->bCombating = true;
 		return TrueDamage > 0;
-		//return true;
 	}
 	return false;
 }

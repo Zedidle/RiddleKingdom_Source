@@ -390,7 +390,7 @@ float ABaseCharacter::AcceptDamage(float Damage, float Penetrate)
 void ABaseCharacter::Dead(bool bClearHealth)
 {
 	Super::Dead(bClearHealth);
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::Dead"));
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::Dead"));
 }
 
 void ABaseCharacter::Stiff(float StiffMulti)
@@ -434,3 +434,7 @@ bool ABaseCharacter::AbilityCanUseWeaponType(EWeaponType WeaponType)
 	return Util::AbilityCanUseWeaponType(AbilityType, WeaponType);
 }
 
+bool ABaseCharacter::AbilityCanUseDeputyType(EDeputyType DeputyType)
+{
+	return Util::AbilityCanUseDeputyType(AbilityType, DeputyType);
+}

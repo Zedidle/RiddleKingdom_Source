@@ -19,6 +19,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FVector WorldLocation;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FRotator Rotation;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		EFaction Faction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float CurHealth;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float MaxHealth;
