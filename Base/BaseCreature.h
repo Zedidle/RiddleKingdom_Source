@@ -47,9 +47,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		bool bLevelKey = false;  
 
+	// true: 将角色和镜头的转向锁定到Target
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool bLocking = false;
+
 	// false: 用于适配没有打横走（只有1D AnimBS）的角色，
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool bLockToTarget = true;  
+		bool bFaceToTarget = true;  
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float UnitDistance = 100; // 最近的攻击距离
@@ -68,9 +72,6 @@ public:
 	// 是否作为AI
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) 
 		bool bAI = false;
-
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-		bool IsPlayerControlling();
 
 	// 是否处于战斗状态
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -168,7 +169,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class ABaseCreature* Target = nullptr;
 
+	UPROPERTY(BlueprintReadOnly)
 	class ABaseWeapon* Weapon = nullptr;
+	UPROPERTY(BlueprintReadOnly)
+	class ABaseDeputy* Deputy = nullptr;
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<ABaseSkill> C_SpriteIntrudePawn = nullptr;
@@ -185,7 +190,7 @@ public:
 	float DeltaSeconds;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool IsSprinting = false;
+	bool bSprinting = false;
 
 	bool CanAction = true; // 处于不同场合或动作判定是否可以攻击
 
@@ -202,7 +207,7 @@ public:
 		float MaxStamina = 100;
 	// 每秒恢复体力
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float StaminaRegen = 1;	
+		float StaminaRegen = 10;	
 	// 防御力
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		int Defense = 5;	
@@ -250,9 +255,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		bool bShowShootAnim = true; 
 
-	// 作用仅仅是将角色和镜头的转向锁定到Target
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool IsLocking = false;
+
 
 	// 战斗时是否给对方显示血条
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -318,6 +321,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 		float GetStaminaPercent();
 		
+	UFUNCTION(BlueprintCallable)
+		bool DelStamina(float Stamina);
+
+
 	// 设置/判断 无敌
 	UFUNCTION(BlueprintCallable)
 		void SetInvincible(float Time, bool bForce=false);
@@ -367,6 +374,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 		EDistance GetDistanceTypeToTarget();
 
+	UFUNCTION()
+		bool ActionDelStamina(FString ActionName);
+
 	UFUNCTION(BlueprintCallable)
 		bool PlayMontage(FString Rowname, FString SectionName = "", float PlayRate=1.0f);
 
@@ -374,5 +384,5 @@ public:
 		bool NeedQuickRotate();
 
 	UFUNCTION(BlueprintPure)
-		FTransform GetTransform_ProjectileToTarget(ABaseCreature* _Target=nullptr);
+		FTransform GetTransform_ProjectileToTarget(ABaseCreature* _Target=nullptr, FName StartSocketName = "Fire_Start");
 };

@@ -43,6 +43,4 @@ void IActionInterface::ActionDelegate(EDistance D)
 	}
 
 
-	
-
 }

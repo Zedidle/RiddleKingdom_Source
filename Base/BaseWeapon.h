@@ -56,7 +56,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float DelStamina = 10.f;
+		float BaseDelStamina = 10.f;
 
 	UFUNCTION(BlueprintCallable)
 	void UseWeapon_Start();

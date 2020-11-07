@@ -30,7 +30,7 @@ void UBaseAnimInstance::UpdateAnimaton()
 
 		IsFalling = Owner->GetCharacterMovement()->IsFalling();
 		IsFlying = Owner->GetCharacterMovement()->IsFlying();
-		IsLocking = Owner->IsLocking;
+		IsLocking = Owner->bLocking;
 	}
 }
 

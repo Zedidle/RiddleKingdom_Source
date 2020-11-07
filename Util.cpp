@@ -1,10 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// 工具集
 
 #include "Util.h"
-//#include "Kismet/KismetMathLibrary.h"
-//using Math = UKismetMathLibrary;
-
+#include "Base/BaseGameInstance.h"
+#include "Base/BaseCreature.h"  // 用到一些枚举类型
 
 
 
@@ -99,39 +97,56 @@ bool Util::AbilityCanUseDeputyType(ECharacterAbility Ability, EDeputyType Deputy
 	}
 }
 
+float Util::CalDamageByDifficulty(float Damage, bool bPlayerControlled)
+{
+	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(GWorld);
+	UBaseGameInstance* GI = Cast<UBaseGameInstance>(GameInstance);
 
-
-
-
-
-
-
-
-
-
-
-//Util::Util()
-//{
-//}
-//
-//Util::~Util()
-//{
-//}
-//void Util::SetGlobalTimeDilation(const UWorld* W, float Scale, float Time)
-//{
-//	if (W)
-//	{
-//		World = W;
-//		UGameplayStatics::SetGlobalTimeDilation(World, Scale);
-//		World->GetTimerManager().ClearTimer(DilationTimer);
-//		World->GetTimerManager().SetTimer(DilationTimer, this, &Util::DilationTimeout, Time);
-//	}
-//}
-//
-//void Util::DilationTimeout()
-//{
-//	if (World)
-//	{
-//		UGameplayStatics::SetGlobalTimeDilation(World, 1);
-//	}
-//}
+	if (GI)
+	{
+		switch (GI->Setting.Difficulty)
+		{
+		case EDifficulty::E_Simple:
+		{
+			if (bPlayerControlled)
+			{
+				Damage *= 0.5;
+			}
+			else
+			{
+				Damage *= 2;
+			}
+			break;
+		}
+		case EDifficulty::E_Normal:
+		{
+			break;
+		}
+		case EDifficulty::E_Hard:
+		{
+			if (bPlayerControlled)
+			{
+				Damage *= 1.5;
+			}
+			else
+			{
+				Damage *= 0.75;
+			}
+			break;
+		}
+		case EDifficulty::E_Hell:
+		{
+			if (bPlayerControlled)
+			{
+				Damage *= 2;
+			}
+			else
+			{
+				Damage *= 0.5;
+			}
+			break;
+		}
+		}
+	}
+	return Damage;
+}

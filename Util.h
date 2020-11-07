@@ -17,4 +17,7 @@ namespace Util
 	bool AbilityCanUseDeputyType(ECharacterAbility Ability, EDeputyType DeputyType);
 
 	
+	float CalDamageByDifficulty(float Damage, bool bPlayerControlled);
+
+
 };

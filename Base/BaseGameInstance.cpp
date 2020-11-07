@@ -12,6 +12,45 @@
 
 
 
+UBaseGameInstance::UBaseGameInstance()
+{
+
+}
+
+
+
+
+
+
+
+void UBaseGameInstance::SetSetting(FSetting S)
+{
+	Setting = S;
+}
+
+void UBaseGameInstance::SaveSetting(UBaseSaveGame* SG)
+{
+	UGameplayStatics::SaveGameToSlot(SG, SettingFileName, 0);
+}
+
+UBaseSaveGame* UBaseGameInstance::LoadSetting()
+{
+	USaveGame* SavaGame = UGameplayStatics::LoadGameFromSlot(SettingFileName, 0);
+	UBaseSaveGame* SG = Cast<UBaseSaveGame>(SavaGame);
+	if (IsValid(SG))
+	{
+		Setting = SG->Setting;
+	}
+	return SG;
+}
+
+
+
+
+
+
+
+
 void UBaseGameInstance::SetPlayerData(FString Name, int Index)
 {
 	PlayerName = Name;
@@ -30,6 +69,7 @@ void UBaseGameInstance::SaveGame(UBaseSaveGame* SG, FString Name, int Index)
 		Index = PlayerIndex;
 	}
 
+	RefreshAllHUD(true);
 	UGameplayStatics::SaveGameToSlot(SG, Name, Index);
 }
 
@@ -47,16 +87,16 @@ UBaseSaveGame* UBaseGameInstance::LoadGame(FString Name, int Index)
 
 	USaveGame* SavaGame = UGameplayStatics::LoadGameFromSlot(Name, Index);
 	UBaseSaveGame* SG = Cast<UBaseSaveGame>(SavaGame);
-
-	TArray<AActor*> CreatureArray;
-	UGameplayStatics::GetAllActorsOfClass(GWorld, ABaseCreature::StaticClass(), CreatureArray);
-
 	if (IsValid(SG))
 	{
+		RefreshAllHUD(true);
 
 		// 夺舍链
 		CreatureUsed = SG->CreatureUsed;
+		GameProgress = SG->GameProgress;
 
+		TArray<AActor*> CreatureArray;
+		UGameplayStatics::GetAllActorsOfClass(GWorld, ABaseCreature::StaticClass(), CreatureArray);
 
 		// 复原所有在场 Creature
 		UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::LoadGame Creature 0"));
@@ -89,7 +129,7 @@ UBaseSaveGame* UBaseGameInstance::LoadGame(FString Name, int Index)
 					// 控制中的角色继续控制
 					if (D.bPlayerControlling)
 					{
-						if (!C->IsPlayerControlling())
+						if (!C->IsPlayerControlled())
 						{
 							PlayerController->Possess(C);
 						}
@@ -97,16 +137,16 @@ UBaseSaveGame* UBaseGameInstance::LoadGame(FString Name, int Index)
 					//// 控制过或死亡中的角色，除了原本就是盟友外，失去活动能力
 					else if (D.bBeenControlled || D.CurHealth <= 0)
 					{
-						if (!C->IsPlayerControlling())
+						if (!C->IsPlayerControlled())
 						{
-							C->Dead(); // 可能导致奔溃
+							C->Dead(false);
 						}
 					}
 					//// 没有控制过且没死过的
-					//else if (D.CurHealth > 0)
-					//{
-					//	C->Revive();
-					//}
+					else if (D.CurHealth > 0)
+					{
+						C->Revive();
+					}
 				}
 			}
 		}
@@ -160,23 +200,17 @@ ABaseCreature* UBaseGameInstance::GetCurCreatureUsed()
 
 void UBaseGameInstance::SetCurBoss(ABaseMonster* M)
 {
-	UE_LOG(LogTemp, Warning, TEXT(" UBaseGameInstance::SetCurBoss"));
+	if (IsValid(BossHealthHUD))
+	{
+		BossHealthHUD->RemoveFromViewport();
+	}
 	if (IsValid(M))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::SetCurBoss Valid"));
 		CurBoss = M;
 		if (C_BossHealth)
 		{
 			BossHealthHUD = CreateWidget<UUserWidget>(GetWorld(), C_BossHealth);
 			BossHealthHUD->AddToViewport();
-		}
-	}
-	else
-	{
-		if (IsValid(BossHealthHUD))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("BossHealthHUD->RemoveFromViewport"));
-			BossHealthHUD->RemoveFromViewport();
 		}
 	}
 }
@@ -186,6 +220,13 @@ ABaseMonster* UBaseGameInstance::GetCurBoss()
 	return CurBoss;
 }
 
+
+void UBaseGameInstance::RefreshAllHUD(bool bShow)
+{
+	ShowCreatureHUD(bShow);
+	ShowCreatureInfo(bShow);
+	ShowEquipInfo(bShow);
+}
 
 void UBaseGameInstance::ShowShootAimHUD(bool bShow)
 {
@@ -224,49 +265,34 @@ void UBaseGameInstance::ShowCreatureHUD(bool bShow)
 
 void UBaseGameInstance::ShowCreatureInfo(bool bShow)
 {
+	if (IsValid(CreatureInfoHUD))
+	{
+		CreatureInfoHUD->RemoveFromViewport();
+	}
 	if (bShow)
 	{
-		if (IsValid(CreatureInfoHUD))
-		{
-			return;
-		}
 		if (IsValid(C_CreatureInfoHUD))
 		{
 			CreatureInfoHUD = CreateWidget<UUserWidget>(GetWorld(), C_CreatureInfoHUD);
 			CreatureInfoHUD->AddToViewport();
 		}
 	}
-	else
-	{
-		if (IsValid(CreatureInfoHUD))
-		{
-			CreatureInfoHUD->RemoveFromViewport();
-		}
-	}
-
 }
 
 
 void UBaseGameInstance::ShowEquipInfo(bool bShow)
 {
 	UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::ShowEquipInfo"));
+	if (IsValid(EquipInfoHUD))
+	{
+		EquipInfoHUD->RemoveFromViewport();
+	}
 	if (bShow)
 	{
-		if (IsValid(EquipInfoHUD))
-		{
-			return;
-		}
 		if (IsValid(C_EquipInfoHUD))
 		{
 			EquipInfoHUD = CreateWidget<UUserWidget>(GetWorld(), C_EquipInfoHUD);
 			EquipInfoHUD->AddToViewport();
-		}
-	}
-	else
-	{
-		if (IsValid(EquipInfoHUD))
-		{
-			EquipInfoHUD->RemoveFromViewport();
 		}
 	}
 }
@@ -284,7 +310,7 @@ void UBaseGameInstance::ShowDeadHUD(bool bShow)
 		if (IsValid(C_DeadHUD))
 		{
 			DeadHUD = CreateWidget<UUserWidget>(GetWorld(), C_DeadHUD);
-			DeadHUD->AddToViewport();
+			DeadHUD->AddToViewport(1000);
 		}
 	}
 
@@ -306,4 +332,12 @@ void UBaseGameInstance::ShowKeyDeadHUD(bool bShow)
 		}
 	}
 
+}
+
+void UBaseGameInstance::SetGmaeProgress(EGameProgress Progress)
+{
+	if (Progress > GameProgress)
+	{
+		GameProgress = Progress;
+	}
 }

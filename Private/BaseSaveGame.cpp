@@ -14,6 +14,8 @@ UBaseSaveGame::UBaseSaveGame()
 	if (IsValid(GI))
 	{
 		CreatureUsed = GI->CreatureUsed;
+		GameProgress = GI->GameProgress;
+		Setting = GI->Setting;
 	}
 }
 
@@ -25,10 +27,6 @@ UBaseSaveGame* UBaseSaveGame::SaveCreatureData()
 	TArray<AActor*> CreatureArray;
 	UGameplayStatics::GetAllActorsOfClass(GWorld, ABaseCreature::StaticClass(), CreatureArray);
 
-	//if (IsValid(GWorld))
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("UBaseSaveGame::SavePlayerCreatureData GetWorld IsValid"));
-	//}
 
 	UE_LOG(LogTemp, Warning, TEXT("UBaseSaveGame::SavePlayerCreatureData CreatureArray.Num: %d"), CreatureArray.Num());
 
@@ -41,7 +39,7 @@ UBaseSaveGame* UBaseSaveGame::SaveCreatureData()
 			 UE_LOG(LogTemp, Warning, TEXT("UBaseSaveGame::SavePlayerCreatureData Creature Name: %s"), *Creature->GetName());
 			 FCreatureData D;
 			 D.CreatureName = Creature->GetName();
-			 D.bPlayerControlling = Creature->IsPlayerControlling();
+			 D.bPlayerControlling = Creature->IsPlayerControlled();
 			 D.WorldLocation = Creature->GetActorLocation();
 			 D.Rotation = Creature->GetActorRotation();
 			 D.Faction = Creature->Faction;

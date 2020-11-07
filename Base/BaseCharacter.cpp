@@ -45,9 +45,8 @@ ABaseCharacter::ABaseCharacter()
 	GetCharacterMovement()->MaxFlySpeed = 200;
 	GetCharacterMovement()->BrakingDecelerationFlying = 300;
 	
-	this->bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = false;
 
-	CreateFootStepBoxs();
 	CalBaseAbility();
 	Faction =  EFaction::E_Character; // 设置阵营
 
@@ -64,7 +63,7 @@ void ABaseCharacter::CalBaseAbility()
 	HealthRegen = 1;
 	CurStamina = 100;
 	MaxStamina = 100;
-	StaminaRegen = 15;
+	StaminaRegen = 10;
 
 	Attributes.Body = 1;
 	Attributes.Power = 1;
@@ -85,7 +84,7 @@ void ABaseCharacter::LoadWeapon(FString WeaponID)
 	UDataTable* DT_Weapon = GameInstance->DT_Weapon;
 
 	if (WeaponID == "0" || !IsValid(DT_Weapon)) return;
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadWeapon WeaponID:%s"), *CurWeaponID);
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadWeapon WeaponID:%s"), *CurWeaponID);
 
 	CurWeaponID = WeaponID;
 	FName RowName = FName(*CurWeaponID);
@@ -94,14 +93,14 @@ void ABaseCharacter::LoadWeapon(FString WeaponID)
 
 	if (Row)
 	{	
-		TSubclassOf<ABaseWeapon> SubWeaponClass = LoadClass<ABaseWeapon>(nullptr, *Row->WeaponActorPath);
+		TSubclassOf<ABaseWeapon> C_SubWeapon = LoadClass<ABaseWeapon>(nullptr, *Row->WeaponActorPath);
 		UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadWeapon 1"));
-		if (SubWeaponClass != nullptr)
+		if (C_SubWeapon != nullptr)
 		{
 			if (IsValid(Weapon)) {
 				Weapon->Destroy();
 			}
-			Weapon = GetWorld()->SpawnActor<ABaseWeapon>(SubWeaponClass);
+			Weapon = GetWorld()->SpawnActor<ABaseWeapon>(C_SubWeapon);
 			if (Weapon)
 			{
 				FAttachmentTransformRules Rules = FAttachmentTransformRules(EAttachmentRule::KeepRelative, false);
@@ -122,7 +121,7 @@ void ABaseCharacter::LoadDeputy(FString DeputyID)
 	UDataTable* DT_Deputy = GameInstance->DT_Deputy;
 
 	if (DeputyID == "0" || !IsValid(DT_Deputy)) return;
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy DeputyID:%s"), *CurDeputyID);
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy DeputyID:%s"), *CurDeputyID);
 	CurDeputyID = DeputyID;
 	FName RowName = FName(*CurDeputyID);
 	FString ContextString;
@@ -130,19 +129,15 @@ void ABaseCharacter::LoadDeputy(FString DeputyID)
 
 	if(Row)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy 111"));
 		TSubclassOf<ABaseDeputy> C_SubDeputy = LoadClass<ABaseDeputy>(nullptr, *Row->DeputyActorPath);
 		if (C_SubDeputy != nullptr)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy 222"));
-
 			if (Deputy) {
 				Deputy->Destroy();
 			}
 			Deputy = GetWorld()->SpawnActor<ABaseDeputy>(C_SubDeputy);
 			if (Deputy)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::LoadDeputy 333"));
 				FAttachmentTransformRules Rules = FAttachmentTransformRules(EAttachmentRule::KeepRelative, false);
 				Deputy->User = this;
 				Deputy->AttachToComponent(GetMesh(), Rules, "DeputyHold");
@@ -238,11 +233,7 @@ void ABaseCharacter::DelHealth(float Health)
 	CurHealth = Math::FMax(CurHealth, 0);
 }
 
-void ABaseCharacter::DelStamina(float Stamina)
-{
-	CurStamina -= Stamina;
-	CurStamina = Math::FMax(CurStamina, 0);
-}
+
 
 
 void ABaseCharacter::N1Attack()
@@ -252,16 +243,10 @@ void ABaseCharacter::N1Attack()
 		PlayMontage("N1Attack");
 		return;
 	}
-	if (Weapon->DelStamina > CurStamina) return;
-	FString ActionString = "N1Attack" + GetMovementModeString("_") + GetSubMovementModeString("_") + 
-		Util::GetWeaponTypeString(Weapon->WeaponType,"_");
+	FString ActionString = "N1Attack" + GetMovementModeString("_") + GetSubMovementModeString("_") +
+		Util::GetWeaponTypeString(Weapon->WeaponType, "_");
+	PlayMontage(ActionString);
 
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::N1Attack: %s"), *ActionString);
-
-	if (PlayMontage(ActionString))
-	{
-		DelStamina(Weapon->DelStamina);
-	}
 }
 
 void ABaseCharacter::N2Attack()
@@ -271,26 +256,17 @@ void ABaseCharacter::N2Attack()
 		PlayMontage("N2Attack");
 		return;
 	}
-	if (Weapon->DelStamina > CurStamina) return;
-
 	FString ActionString = "N2Attack" + GetMovementModeString("_") + GetSubMovementModeString("_") + 
 		Util::GetWeaponTypeString(Weapon->WeaponType, "_");
-	if (PlayMontage(ActionString))
-	{
-		DelStamina(Weapon->DelStamina);
-	}
+	PlayMontage(ActionString);
 }
 
 void ABaseCharacter::UseDeputy()
 {
 	if (!IsValid( Deputy)) return;
-	if (Deputy->DelStamina > CurStamina) return;
 
 	FString ActionString = "UseDeputy" + Util::GetDeputyTypeString(Deputy->GetDeputyType(), "_");
-	if (PlayMontage(ActionString))
-	{
-		DelStamina(Deputy->DelStamina);
-	}
+	PlayMontage(ActionString);
 }
 
 
@@ -333,47 +309,6 @@ void ABaseCharacter::LookUp(float Amount)
 {
 	Super::LookUp(Amount);
 	AddControllerPitchInput(Amount);
-}
-
-
-void ABaseCharacter::CreateFootStepBoxs()
-{
-	LeftFootBox = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftFootBox"));
-	RightFootBox = CreateDefaultSubobject<UBoxComponent>(TEXT("RightFootBox"));
-	LeftFootBox->SetupAttachment(GetMesh(), FName("LeftToeBase"));
-	RightFootBox->SetupAttachment(GetMesh(), FName("RightToeBase"));
-	LeftFootBox->OnComponentBeginOverlap.AddDynamic(this, &ABaseCharacter::PlayFootStepSound);
-	RightFootBox->OnComponentBeginOverlap.AddDynamic(this, &ABaseCharacter::PlayFootStepSound);
-}
-
-void ABaseCharacter::PlayFootStepSound(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	UWorld* World = GetWorld();
-	if (World->GetTimerManager().IsTimerActive(StepSoundTimer)) return;
-
-	if (OtherActor && Cast<ABaseGround>(OtherActor))
-	{
-		ABaseGround* BaseGround = Cast<ABaseGround>(OtherActor);
-
-		UDataTable* CharacterGroundSoundsTable = LoadObject<UDataTable>(NULL, TEXT("DataTable'/Game/Main/Data/CharacterGroundSound_DT.CharacterGroundSound_DT'"));
-		//UE_LOG(LogTemp, Warning, TEXT("Table->GetName: %s"), *BaseGround->GroundTypeToTableRowname());
-
-		FName RowName = FName(*BaseGround->GroundTypeToTableRowname());
-		FString ContextString;
-		FBaseGroundSound* Row = CharacterGroundSoundsTable->FindRow<FBaseGroundSound>(RowName, ContextString);
-		if (Row)
-		{
-			//UE_LOG(LogTemp, Warning, TEXT("SoundPath: %s"), *Row->SoundPath);
-			USoundBase* GrassStep = LoadObject<USoundBase>(NULL, *Row->SoundPath);
-			UGameplayStatics::PlaySoundAtLocation(GetWorld(), GrassStep, BaseGround->GetActorLocation());
-			if (World) {
-				if (!World->GetTimerManager().IsTimerActive(StepSoundTimer)) {
-					World->GetTimerManager().SetTimer(StepSoundTimer, 0.2f, false);
-				}
-			}
-		}
-	}
 }
 
 

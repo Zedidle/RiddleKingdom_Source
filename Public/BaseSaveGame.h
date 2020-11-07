@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/SaveGame.h"
 #include "../Base/BaseCreature.h"
+#include "../Base/BaseGameInstance.h"
 #include "BaseSaveGame.generated.h"
 
 
@@ -46,6 +47,11 @@ class RPGTUTORIAL_API UBaseSaveGame : public USaveGame
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray<FString> CreatureUsed;
 
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+			EGameProgress GameProgress = EGameProgress::E_StartMenu;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+			FSetting Setting;
 
 	public:
 

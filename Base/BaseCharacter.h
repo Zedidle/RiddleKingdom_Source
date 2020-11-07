@@ -20,20 +20,11 @@ GENERATED_BODY()
 
 public:
 	ABaseCharacter();
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class ABaseWeapon* Weapon = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class ABaseDeputy* Deputy = nullptr;
+
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		AActor* CommunicateActor = nullptr;
-
-	UPROPERTY(Category = Character, EditAnywhere, BlueprintReadWrite)
-		class UBoxComponent* RightFootBox = nullptr;
-
-	UPROPERTY(Category = Character, EditAnywhere, BlueprintReadWrite)
-		class UBoxComponent* LeftFootBox = nullptr;
 
 
 private:
@@ -51,7 +42,6 @@ protected:
 	virtual void BeginPlay() override;
 	FTimerHandle ComboWaitTimer;
 	FTimerHandle DeputyComboWaitTimer;
-	FTimerHandle StepSoundTimer;
 	FTimerHandle InvincibleTimer;
 	
 
@@ -95,11 +85,6 @@ public:
 
 
 public:
-	void CreateFootStepBoxs();
-	UFUNCTION()
-	void PlayFootStepSound(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, 
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
 	UFUNCTION()
 	void CalBaseAbility();
 
@@ -135,9 +120,6 @@ public:
 	
 	UFUNCTION()
 	void DelHealth(float Health); // 消耗生命值
-
-	UFUNCTION()
-	void DelStamina(float Stamina); // 消耗体力
 
 	virtual float AcceptDamage(float Damage, float Penetrate = 0) override;
 	

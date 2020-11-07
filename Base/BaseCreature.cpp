@@ -53,14 +53,9 @@ void ABaseCreature::AddSkillOnUsing(ABaseSkill* Skill)
 	}
 }
 
-bool ABaseCreature::IsPlayerControlling()
-{
-	return IsPlayerControlled();
-}
-
 void ABaseCreature::ActionModes()
 {
-	if (!bAI) return;
+	if (IsPlayerControlled()) return;
 	if (!IsValid(GetTarget())) return;  // 没有看到角色
 	if (IsDead()) return;
 	ActionInterval -= DeltaSeconds;
@@ -82,7 +77,7 @@ void ABaseCreature::ActionModes()
 
 void ABaseCreature::SetMovement(float SpeedMulti, float RotationRataZMulti, EMovementMode Mode)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::SetMovement"));
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::SetMovement"));
 	float Speed = BaseSpeed * SpeedMulti;
 	float RotationRateZ = BaseRotationRateZ * RotationRataZMulti;
 	GetCharacterMovement()->RotationRate.Yaw = RotationRateZ;
@@ -96,14 +91,14 @@ void ABaseCreature::SetMovement(float SpeedMulti, float RotationRataZMulti, EMov
 	{
 		case EMovementMode::MOVE_Walking:
 		{
-			UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::SetMovement Walking"));
+			//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::SetMovement Walking"));
 			GetCharacterMovement()->MaxWalkSpeed = Speed;
 			GetCharacterMovement()->SetMovementMode(Mode);
 			break;
 		}
 		case EMovementMode::MOVE_Flying:
 		{
-			UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::SetMovement Flying"));
+			//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::SetMovement Flying"));
 			GetCharacterMovement()->MaxFlySpeed = Speed;
 			GetCharacterMovement()->SetMovementMode(Mode);
 			break;
@@ -143,7 +138,6 @@ void ABaseCreature::PossessedBy(AController* NewController)
 	{
 		if (NewController == UGameplayStatics::GetPlayerController(GetWorld(), 0))
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::PossessedBy 0"));
 			bBeenControlled = true;
 			Faction = EFaction::E_Character;
 			GameInstance->AddCreatureUsed(this);
@@ -162,7 +156,8 @@ void ABaseCreature::BeginPlay()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
 	PosStartInWorld = GetActorLocation();
-
+	
+	UnitDistance = UnitDistance * GetActorScale().X;
 
 
 	ComboIndex.Add("N1Attack", 0);
@@ -178,7 +173,6 @@ void ABaseCreature::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if(IsDead()) return;
-	bAI = !IsPlayerControlling();
 	DeltaSeconds = DeltaTime;
 	Tick_Regen();
 	Tick_MoveToTarget();
@@ -191,7 +185,7 @@ void ABaseCreature::Tick_Regen()
 	CurHealth += HealthRegen * DeltaSeconds;
 	CurHealth = Math::FMin(CurHealth, MaxHealth);
 
-	if (IsSprinting)
+	if (bSprinting)
 	{
 		float DelStamina = 0.2 * StaminaRegen * DeltaSeconds;
 		if (CurStamina >= DelStamina)
@@ -200,13 +194,13 @@ void ABaseCreature::Tick_Regen()
 		}
 		else
 		{
-			IsSprinting = false;
+			bSprinting = false;
 			CurStamina = 0;
 		}
 	}
 	else
 	{
-		CurStamina += StaminaRegen * DeltaSeconds;
+		CurStamina += StaminaRegen * 0.5 * DeltaSeconds;
 	}
 	CurStamina = Math::FMin(CurStamina, MaxStamina);
 }
@@ -214,14 +208,19 @@ void ABaseCreature::Tick_Regen()
 
 void ABaseCreature::Tick_LockToFaceTarget()
 {
-	if (!IsLocking || !IsValid(Target) || IsSprinting) return;
+	if (!bLocking || !IsValid(Target) || bSprinting) return;
+	if (Target->IsDead())
+	{
+		bLocking = false;
+	}
+
 	FVector SelfLocation = GetActorLocation();
 	FVector TargetLocation = Target->GetActorLocation();
 	SelfLocation.Z = 0;
 	TargetLocation.Z = 0;
 	FRotator RotationToTarget = Math::FindLookAtRotation(SelfLocation, TargetLocation);
 
-	if (bLockToTarget)
+	if (bFaceToTarget)
 	{
 		FRotator SelfForwardVectorRotX = Math::MakeRotFromX(GetActorForwardVector());
 		SetActorRotation(Math::RLerp(SelfForwardVectorRotX, RotationToTarget, 0.2, true));
@@ -249,8 +248,8 @@ void ABaseCreature::Tick_MoveToTarget(float Time, float SpeedMulti)
 			FVector V = Math::GetForwardVector(Math::FindLookAtRotation(GetActorLocation(), Target->GetActorLocation()));
 			AddMovementInput(V, 1, false);
 		}
+		BP_Tick_MoveToTarget();
 	}
-	BP_Tick_MoveToTarget();
 }
 
 void ABaseCreature::Tick_CalFalling()
@@ -399,6 +398,8 @@ EDistance ABaseCreature::GetDistanceTypeToTarget()
 	return EDistance::E_FLAT_SNEAR;
 }
 
+
+
 bool ABaseCreature::IsDead()
 {
 	return CurHealth <= 0;
@@ -418,8 +419,9 @@ void ABaseCreature::Dead(bool bClearHealth)
 	if (GameInstance->GetCurCreatureUsed() == this)
 	{
 		APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-		if (IsPlayerControlling())
+		if (IsPlayerControlled())
 		{
+			PlayerController->UnPossess();
 			if (!bLevelKey)
 			{
 				GameInstance->ShowDeadHUD(true);
@@ -428,7 +430,6 @@ void ABaseCreature::Dead(bool bClearHealth)
 			{
 				GameInstance->ShowKeyDeadHUD(true);
 			}
-			PlayerController->UnPossess();
 		}
 	}
 	SetMovement(2, 2, EMovementMode::MOVE_Falling);
@@ -442,14 +443,14 @@ void ABaseCreature::Revive()
 	if (!bBeenControlled)
 	{
 		CurHealth = MaxHealth;
+		CurStamina = MaxStamina;
 	}
-	//if (UGameplayStatics::GetPlayerCharacter(GetWorld(), 0) == this)
-	if (IsPlayerControlling())
+	if (IsPlayerControlled())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Revive 0"));
 		EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
 	}
-	IsLocking = false;
+	bLocking = false;
 	GetMesh()->GetAnimInstance()->Montage_Resume(nullptr);
 	PlayMontage("Revive");
 	BP_Revive();
@@ -474,12 +475,14 @@ float ABaseCreature::AcceptDamage(float Damage, float Penetrate)
 
 	if (IsInvincible() || IsDead()) return 0;
 	if( IsTrueDead() ) return 0;
-	if (bBeenControlled && !IsPlayerControlling()) return 0;
+	if (bBeenControlled && !IsPlayerControlled()) return 0;
 	// 后面还要考虑侵入盟友后，盟友自己控制的情况
 
 
 	float TrueDefense = Math::Max(Defense - Penetrate, 0);
 	Damage = Damage * 100 / (TrueDefense + 100);
+
+	Damage = Util::CalDamageByDifficulty(Damage, IsPlayerControlled());
 
 	SetInvincible(0.1f);
 	if (Damage > CurHealth)
@@ -566,7 +569,7 @@ FString ABaseCreature::GetMovementModeString(FString Prefix)
 
 FString ABaseCreature::GetSubMovementModeString(FString Prefix)
 {
-	if (IsSprinting)
+	if (bSprinting)
 	{
 		return Prefix + "Sprint";
 	}
@@ -586,7 +589,7 @@ void ABaseCreature::Sprinting()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Sprinting"));
 	if (GetMesh()->GetAnimInstance()->IsAnyMontagePlaying()) return;
-	IsSprinting = true;
+	bSprinting = true;
 	if (IsGround())
 	{
 		SetMovement(3, 1.5);
@@ -596,7 +599,7 @@ void ABaseCreature::Sprinting()
 void ABaseCreature::StopSprinting()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::StopSprinting"));
-	IsSprinting = false;
+	bSprinting = false;
 	if (IsGround())
 	{
 		SetMovement(2, 2);
@@ -615,12 +618,13 @@ void ABaseCreature::N2Attack()
 
 void ABaseCreature::UseDeputy()
 {
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::ResetSave"));
 	PlayMontage("UseDeputy");
 }
 
 void ABaseCreature::Lock()
 {
-	IsLocking = !IsLocking;
+	bLocking = !bLocking;
 }
 
 void ABaseCreature::Dodge()
@@ -677,15 +681,11 @@ void ABaseCreature::NearView()
 void ABaseCreature::ResetSave()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::ResetSave"));
-	//SetActorLocation(PosStartInWorld);
 	GetCharacterMovement()->StopActiveMovement();
-	//Revive();
-	for(auto& Skill: SkillsOnUsing)
+	for (auto& Skill : SkillsOnUsing)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::ResetSave SkillName: %s"), *Skill->GetName());
 		if (IsValid(Skill))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::ResetSave Skill->Destroyed()"));
 			Skill->K2_DestroyActor();
 		}
 	}
@@ -822,6 +822,15 @@ float ABaseCreature::GetStaminaPercent()
 	return CurStamina / MaxStamina;
 }
 
+bool ABaseCreature::DelStamina(float Stamina)
+{
+	if (Stamina <= CurStamina)
+	{
+		CurStamina -= Stamina;
+		return true;
+	}
+	return false;
+}
 
 void ABaseCreature::SetInvincible(float Time, bool bForce)
 {
@@ -889,7 +898,58 @@ void ABaseCreature::IntrudeTarget(ABaseCreature* Creature)
 	}
 }
 
+bool ABaseCreature::ActionDelStamina(FString ActionName)
+{
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::ActionDelStamina ActionName: %s"), *ActionName);
+	if (ActionName == "Stiff")
+	{
+		return true;
+	}
 
+
+	if (ActionName == "Dodge")
+	{
+		if (DelStamina(10))
+		{
+			SetInvincible(0.3);
+			return true;
+		}
+	}
+	else if(IsValid(Weapon))
+	{
+		float N1Multi = 1, N2Multi = 1;
+
+		switch (Weapon->WeaponType)
+		{
+			case EWeaponType::E_Bow:
+			{
+				N1Multi = 2, N2Multi = 5;
+				break;
+			}
+			case EWeaponType::E_GreatSword:
+			{
+				N1Multi = 1, N2Multi = 1.5;
+				break;
+			}
+
+		}		
+
+		UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::ActionDelStamina Weapon IsValid"));
+		if (ActionName == "N1Attack")
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::ActionDelStamina ActionName: 1"));
+			return DelStamina(Weapon->BaseDelStamina * N1Multi);
+		}
+		else if (ActionName == "N2Attack")
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::ActionDelStamina ActionName: 2"));
+			return DelStamina(Weapon->BaseDelStamina * N1Multi);
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::ActionDelStamina ActionName: 3"));
+	return DelStamina(MaxStamina * 0.1);
+}
 
 bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName,  float PlayRate)
 {
@@ -897,7 +957,6 @@ bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName,  float Pla
 	if (Rowname == "")	return false;
 	TArray<FString> MontageCanPlayDead = {"Dead", "Revive"};
 	if (!IsValid(CreatureMontageDataTable)) return false;
-	if (!MontageCanPlayDead.Contains(Rowname) && (!CanAction || IsDead())) return false;
 	int _Index = Rowname.Find("_");
 	FString ActionName;
 	if (_Index > -1)
@@ -907,6 +966,11 @@ bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName,  float Pla
 	else
 	{
 		ActionName = Rowname;
+	}
+	if (!MontageCanPlayDead.Contains(Rowname))
+	{
+		if (!CanAction || IsDead()) return false;
+		if (!ActionDelStamina(ActionName)) return false;
 	}
 
 	FCreatureMontage* CreatureMontage = CreatureMontageDataTable->FindRow<FCreatureMontage>(*Rowname, TEXT("Montage"));
@@ -933,10 +997,7 @@ bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName,  float Pla
 				SectionName = CreatureMontage->Montage->CompositeSections[Index].SectionName.ToString();
 			}
 			PlayAnimMontage(CreatureMontage->Montage, PlayRate, *SectionName);
-			if (Rowname == "Dodge")
-			{
-				SetInvincible(0.3);
-			}
+
 			return true;
 		}
 	}
@@ -946,7 +1007,7 @@ bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName,  float Pla
 bool ABaseCreature::NeedQuickRotate()
 {
 	FRotator Rotator;
-	if (IsValid(Target) && bAI)
+	if (IsValid(Target) && !IsPlayerControlled())
 	{
 		FVector SelfLocation = GetActorLocation();
 		FVector TargetLocation = Target->GetActorLocation();
@@ -975,14 +1036,14 @@ bool ABaseCreature::NeedQuickRotate()
 }
 
 // Target: 强制指向的对象
-FTransform ABaseCreature::GetTransform_ProjectileToTarget(ABaseCreature* _Target)
+FTransform ABaseCreature::GetTransform_ProjectileToTarget(ABaseCreature* _Target, FName StartSocketName)
 {
 	FVector EndPoint;
 	if (IsValid(_Target))
 	{
 		EndPoint = _Target->GetActorLocation();
 	}
-	else if (bAI && IsValid(Target))
+	else if (!IsPlayerControlled() && IsValid(Target))
 	{
 		EndPoint = Target->GetActorLocation();
 	}
@@ -992,7 +1053,7 @@ FTransform ABaseCreature::GetTransform_ProjectileToTarget(ABaseCreature* _Target
 	}
 
 
-	FVector Location = GetMesh()->GetSocketLocation(FName("Fire_Start"));
+	FVector Location = GetMesh()->GetSocketLocation(StartSocketName);
 	FRotator Rotator = Math::FindLookAtRotation(Location, EndPoint);
 
 	return FTransform(Rotator, Location);

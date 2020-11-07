@@ -241,19 +241,19 @@ public:
 UENUM(BlueprintType)
 enum class EWeaponType :uint8 // 主武器类型
 {
-	E_None UMETA(DisplayName = "None"),
-	E_GreatSword UMETA(DisplayName = "GreatSword"),
-	E_Sword UMETA(DisplayName = "Sword"),
-	E_Bow UMETA(DisplayName = "Bow"),
-	E_MagicWand UMETA(DisplayName = "MagicWand")
+	E_None UMETA(DisplayName = "无"),
+	E_GreatSword UMETA(DisplayName = "巨剑"),
+	E_Sword UMETA(DisplayName = "剑"),
+	E_Bow UMETA(DisplayName = "弓"),
+	E_MagicWand UMETA(DisplayName = "法杖")
 };
 
 UENUM(BlueprintType)
 enum class EDeputyType :uint8  // 副手类型
 {
 	E_None UMETA(DisplayName = "无"),
-	E_Shild UMETA(DisplayName = "Shild"), // 盾牌基本效果：使用者无敌一些时间，额外效果：每个盾牌都不同；
-	E_Dagger UMETA(DisplayName = "Dagger"), // 破防/涂毒
+	E_Shild UMETA(DisplayName = "盾牌"), // 盾牌基本效果：使用者无敌一些时间，额外效果：每个盾牌都不同；
+	E_Dagger UMETA(DisplayName = "匕首"), // 破防/涂毒
 };
 
 UENUM(BlueprintType)
