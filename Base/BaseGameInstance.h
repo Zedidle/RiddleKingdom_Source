@@ -54,8 +54,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float Value_Sound = 0.5;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FString Value_Res = FString("1920x1080");
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		EDifficulty Difficulty = EDifficulty::E_Normal;
 };
 
@@ -83,7 +81,7 @@ class RPGTUTORIAL_API UBaseGameInstance : public UGameInstance
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
 			FSetting Setting;
 		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerInfo")
-			FString PlayerName = FString("Zedidle");
+			FString PlayerName = FString("_Zedidle");
 		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PlayerInfo")
 			int PlayerIndex = 0;
 

@@ -241,11 +241,15 @@ void ABaseCharacter::N1Attack()
 	if (!IsValid(Weapon))
 	{
 		PlayMontage("N1Attack");
-		return;
 	}
-	FString ActionString = "N1Attack" + GetMovementModeString("_") + GetSubMovementModeString("_") +
-		Util::GetWeaponTypeString(Weapon->WeaponType, "_");
-	PlayMontage(ActionString);
+	else
+	{
+		FString ActionString = "N1Attack" + GetMovementModeString("_") + GetSubMovementModeString("_") +
+			Util::GetWeaponTypeString(Weapon->WeaponType, "_");
+		UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::N1Attack %f"), Weapon->BasePlayRate);
+		PlayMontage(ActionString, "", Weapon->BasePlayRate);
+	}
+
 
 }
 
@@ -254,11 +258,15 @@ void ABaseCharacter::N2Attack()
 	if (!IsValid(Weapon))
 	{
 		PlayMontage("N2Attack");
-		return;
 	}
-	FString ActionString = "N2Attack" + GetMovementModeString("_") + GetSubMovementModeString("_") + 
-		Util::GetWeaponTypeString(Weapon->WeaponType, "_");
-	PlayMontage(ActionString);
+	else
+	{
+		FString ActionString = "N2Attack" + GetMovementModeString("_") + GetSubMovementModeString("_") +
+			Util::GetWeaponTypeString(Weapon->WeaponType, "_");
+		UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::N2Attack %f"), Weapon->BasePlayRate);
+		PlayMontage(ActionString, "", Weapon->BasePlayRate);
+	}
+
 }
 
 void ABaseCharacter::UseDeputy()
@@ -299,18 +307,6 @@ void ABaseCharacter::MoveRight(float Amount)
 
 }
  
-void ABaseCharacter::Turn(float Amount)
-{
-	Super::Turn(Amount);
-	AddControllerYawInput(Amount);
-}
-
-void ABaseCharacter::LookUp(float Amount)
-{
-	Super::LookUp(Amount);
-	AddControllerPitchInput(Amount);
-}
-
 
 float ABaseCharacter::AcceptDamage(float Damage, float Penetrate)
 {
@@ -335,19 +331,6 @@ void ABaseCharacter::Stiff(float StiffMulti)
 	PlayMontage("Stiff");
 }
 
-//void ABaseCharacter::Communicate()
-//{
-//	ABaseInteractive* Interactive = Cast<ABaseInteractive>(CommunicateActor);
-//	if (Interactive)  // 可交互物体
-//	{
-//		Interactive->Communicate();
-//	}
-//	ABaseNpc* Npc = Cast<ABaseNpc>(CommunicateActor);
-//	if (Npc)
-//	{
-//		Npc->Communicate();
-//	}
-//}
 
 void ABaseCharacter::SetCommunicateActor(AActor *Actor)
 {

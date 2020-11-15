@@ -19,5 +19,8 @@ namespace Util
 	
 	float CalDamageByDifficulty(float Damage, bool bPlayerControlled);
 
+	UFUNCTION(Exec)
+	void TestCmd();
+
 
 };

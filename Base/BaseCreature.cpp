@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "../ActorComponents/CreatureWidgetComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "Kismet/GameplayStatics.h"
@@ -25,8 +26,7 @@ ABaseCreature::ABaseCreature()
 	bUseControllerRotationYaw = false;
 
 	HealthWidget = CreateDefaultSubobject<UCreatureWidgetComponent>("HealthWidget");
-	HealthWidget->SetupAttachment(GetMesh());
-
+	HealthWidget->SetupAttachment(RootComponent);
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
 	SpringArm->SetupAttachment(RootComponent);
@@ -159,6 +159,7 @@ void ABaseCreature::BeginPlay()
 	
 	UnitDistance = UnitDistance * GetActorScale().X;
 
+	HealthWidget->SetRelativeLocation(FVector(0, 0, 1.2 * GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()));
 
 	ComboIndex.Add("N1Attack", 0);
 	ComboIndex.Add("N2Attack", 0);
@@ -400,38 +401,34 @@ EDistance ABaseCreature::GetDistanceTypeToTarget()
 
 
 
-bool ABaseCreature::IsDead()
-{
-	return CurHealth <= 0;
-}
+
 
 void ABaseCreature::Dead(bool bClearHealth)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Dead"));
 	// bClearHeal决定是死亡还是脱离玩家控制
+	UBaseGameInstance* GameInstance = Cast<UBaseGameInstance>(GetGameInstance());
+	if (!IsValid(GameInstance)) return;
+
 	if (bClearHealth)
 	{
 		CurHealth = 0;
 	}
-	UBaseGameInstance* GameInstance = Cast<UBaseGameInstance>(GetGameInstance());
-	if (!IsValid(GameInstance)) return;
 
-	if (GameInstance->GetCurCreatureUsed() == this)
+	if (IsPlayerControlled())
 	{
-		APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-		if (IsPlayerControlled())
+		DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
+
+		if (!bLevelKey)
 		{
-			PlayerController->UnPossess();
-			if (!bLevelKey)
-			{
-				GameInstance->ShowDeadHUD(true);
-			}
-			else
-			{
-				GameInstance->ShowKeyDeadHUD(true);
-			}
+			GameInstance->ShowDeadHUD(true);
+		}
+		else
+		{
+			GameInstance->ShowKeyDeadHUD(true);
 		}
 	}
+
+
 	SetMovement(2, 2, EMovementMode::MOVE_Falling);
 	PlayMontage("Dead");
 	BP_Dead();
@@ -439,6 +436,7 @@ void ABaseCreature::Dead(bool bClearHealth)
 
 void ABaseCreature::Revive()
 {
+	if(IsTrueDead()) return;
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Revive"));
 	if (!bBeenControlled)
 	{
@@ -447,13 +445,18 @@ void ABaseCreature::Revive()
 	}
 	if (IsPlayerControlled())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::Revive 0"));
 		EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));  // 暂时这样，这个0还有待商议
 	}
+
 	bLocking = false;
+	bSprinting = false;
+
 	GetMesh()->GetAnimInstance()->Montage_Resume(nullptr);
+
+	SetInvincible(3);
 	PlayMontage("Revive");
 	BP_Revive();
+
 }
 
 
@@ -464,7 +467,6 @@ void ABaseCreature::Revive()
 float ABaseCreature::AcceptDamage(float Damage, float Penetrate)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::AcceptDamage Damage:%f"), Damage);
-
 	if (Damage < 0)  // 治疗
 	{
 		CurHealth -= Damage;
@@ -608,12 +610,26 @@ void ABaseCreature::StopSprinting()
 
 void ABaseCreature::N1Attack()
 {
-	PlayMontage("N1Attack");
+	if (IsValid(Weapon))
+	{
+		PlayMontage("N1Attack", "", Weapon->BasePlayRate);
+	}
+	else
+	{
+		PlayMontage("N1Attack");
+	}
 }
 
 void ABaseCreature::N2Attack()
 {
-	PlayMontage("N2Attack");
+	if (IsValid(Weapon))
+	{
+		PlayMontage("N2Attack", "", Weapon->BasePlayRate);
+	}
+	else
+	{
+		PlayMontage("N2Attack");
+	}
 }
 
 void ABaseCreature::UseDeputy()
@@ -760,7 +776,23 @@ void ABaseCreature::Turn(float Amount)
 
 void ABaseCreature::LookUp(float Amount)
 {
-	AddControllerPitchInput(Amount);
+	APlayerController* const PC =  Cast<APlayerController>(Controller);
+	float Pitch = PC->GetControlRotation().Pitch;
+
+	if (Pitch > 90)
+	{
+		Pitch = Pitch - 360;
+		//UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::LookUp Pitch %f"), Pitch);
+	}
+
+	if (Amount < 0 && Pitch < MaxLookupPitch)
+	{
+		AddControllerPitchInput(Amount);
+	}
+	if (Amount > 0 && Pitch > MinLookupPitch)
+	{
+		AddControllerPitchInput(Amount);
+	}
 }
 
 bool ABaseCreature::CanBeIntrude(ABaseCreature* Intruder)
@@ -794,9 +826,15 @@ bool ABaseCreature::CanBeIntrude(ABaseCreature* Intruder)
 	return false;
 }
 
+
+bool ABaseCreature::IsDead()
+{
+	return CurHealth <= 0;
+}
+
 bool ABaseCreature::IsTrueDead()
 {
-	return bBeenControlled && CurHealth <= 0;
+	return bBeenControlled && IsDead();
 }
 
 void ABaseCreature::MontageStart(UAnimMontage* Montage)
@@ -943,7 +981,7 @@ bool ABaseCreature::ActionDelStamina(FString ActionName)
 		else if (ActionName == "N2Attack")
 		{
 			UE_LOG(LogTemp, Warning, TEXT("ABaseCreature::ActionDelStamina ActionName: 2"));
-			return DelStamina(Weapon->BaseDelStamina * N1Multi);
+			return DelStamina(Weapon->BaseDelStamina * N2Multi);
 		}
 	}
 
@@ -967,14 +1005,17 @@ bool ABaseCreature::PlayMontage(FString Rowname, FString SectionName,  float Pla
 	{
 		ActionName = Rowname;
 	}
-	if (!MontageCanPlayDead.Contains(Rowname))
-	{
-		if (!CanAction || IsDead()) return false;
-		if (!ActionDelStamina(ActionName)) return false;
-	}
+
 
 	FCreatureMontage* CreatureMontage = CreatureMontageDataTable->FindRow<FCreatureMontage>(*Rowname, TEXT("Montage"));
-	if (CreatureMontage && CreatureMontage->Montage) {
+	if (CreatureMontage && CreatureMontage->Montage) 
+	{
+		if (!MontageCanPlayDead.Contains(Rowname))
+		{
+			if (!CanAction || IsDead()) return false;
+			if (!ActionDelStamina(ActionName)) return false;
+		}
+
 		int32 Num = CreatureMontage->Montage->CompositeSections.Num();
 		if (Num > 0)
 		{

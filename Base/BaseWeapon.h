@@ -29,11 +29,14 @@ private:
 	
 
 public:
+	// 是否显示准心
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool bShowShootAnim = false;  // 是否显示准心
+		bool bShowShootAnim = false; 
 	
+	// 武器核心 提升所有能力加成 1 - 3
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float WeaponCore = 1;  // 武器核心 提升所有能力加成 1 - 3
+	int WeaponCore = 1;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float BaseDamage = 5;
 	

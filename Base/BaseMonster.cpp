@@ -76,7 +76,7 @@ void ABaseMonster::OnSeePawn(APawn* Pawn)
 	if (IsDead() || IsPlayerControlled()) return;
 	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn 1"));
 	ABaseCreature* C = Cast<ABaseCreature>(Pawn);
-	if (!IsValid(C) || C->IsDead()) return;
+	if (!IsValid(C) || C->IsDead() ) return;
 	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::OnSeePawn Name: %s"), *C->GetName());
 
 	SetTarget(C);
@@ -199,20 +199,28 @@ void ABaseMonster::SetStiffCount(float Count)
 
 void ABaseMonster::SetTarget(ABaseCreature* C)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget"));
+	//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget"));
+
+	if (IsDead())
+	{
+		return;
+	}
+
 	// 后面还要考虑AI状态下，Target死亡后如何转移目标（仇恨值、最低生命值）
 	// “当前目标死亡后才能够更换新目标”
 	if (!IsPlayerControlled() && IsValid(Target) && !Target->IsDead() && Target->IsPlayerControlled())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget 0"));
 		return;
 	}
 	
+	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget 1"));
+
 	Super::SetTarget(C);
-	UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget 111"));
 	UBaseGameInstance* GI = Cast<UBaseGameInstance>(GetGameInstance());
 	if (IsValid(GI) && EMonsterLevel::E_Boss == MonsterLevel)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget Boss"));
+		UE_LOG(LogTemp, Warning, TEXT("ABaseMonster::SetTarget Boss"));
 		if (!IsPlayerControlled())
 		{
 			GI->SetCurBoss(this);

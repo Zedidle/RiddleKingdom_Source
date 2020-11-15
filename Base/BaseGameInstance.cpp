@@ -99,7 +99,6 @@ UBaseSaveGame* UBaseGameInstance::LoadGame(FString Name, int Index)
 		UGameplayStatics::GetAllActorsOfClass(GWorld, ABaseCreature::StaticClass(), CreatureArray);
 
 		// 复原所有在场 Creature
-		UE_LOG(LogTemp, Warning, TEXT("UBaseGameInstance::LoadGame Creature 0"));
 		TMap<FString, FCreatureData> CreatureNameToDatas;
 		for (FCreatureData D : SG->CreatureDatas)
 		{
@@ -129,10 +128,8 @@ UBaseSaveGame* UBaseGameInstance::LoadGame(FString Name, int Index)
 					// 控制中的角色继续控制
 					if (D.bPlayerControlling)
 					{
-						if (!C->IsPlayerControlled())
-						{
-							PlayerController->Possess(C);
-						}
+						PlayerController->UnPossess();
+						PlayerController->Possess(C);
 					}
 					//// 控制过或死亡中的角色，除了原本就是盟友外，失去活动能力
 					else if (D.bBeenControlled || D.CurHealth <= 0)
@@ -204,7 +201,7 @@ void UBaseGameInstance::SetCurBoss(ABaseMonster* M)
 	{
 		BossHealthHUD->RemoveFromViewport();
 	}
-	if (IsValid(M))
+	if (IsValid(M) && M->MonsterLevel == EMonsterLevel::E_Boss)
 	{
 		CurBoss = M;
 		if (C_BossHealth)

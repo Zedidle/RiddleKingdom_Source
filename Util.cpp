@@ -150,3 +150,9 @@ float Util::CalDamageByDifficulty(float Damage, bool bPlayerControlled)
 	}
 	return Damage;
 }
+
+void Util::TestCmd()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Util::TestCmd"));
+
+}

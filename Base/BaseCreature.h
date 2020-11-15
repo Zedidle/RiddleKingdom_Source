@@ -65,6 +65,11 @@ public:
 		FVector PosStartInWorld = FVector(); // 放置在世界才有用到，在Begin获取其当前位置来设置，用于Reset重置
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float MaxLookupPitch = 80;  // 由于每个Creature的大小都不同，需要在蓝图独自设定
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float MinLookupPitch = -80;  // 由于每个Creature的大小都不同，需要在蓝图独自设定
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float BaseSpringArmLength = 400;  // 由于每个Creature的大小都不同，需要在蓝图独自设定
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

@@ -36,10 +36,15 @@ UBaseSaveGame* UBaseSaveGame::SaveCreatureData()
 		ABaseCreature* Creature = Cast<ABaseCreature>(Actor);
 		 if (IsValid(Creature))
 		 {
-			 UE_LOG(LogTemp, Warning, TEXT("UBaseSaveGame::SavePlayerCreatureData Creature Name: %s"), *Creature->GetName());
+			 //UE_LOG(LogTemp, Warning, TEXT("UBaseSaveGame::SavePlayerCreatureData Creature Name: %s"), *Creature->GetName());
 			 FCreatureData D;
 			 D.CreatureName = Creature->GetName();
 			 D.bPlayerControlling = Creature->IsPlayerControlled();
+			 if (D.bPlayerControlling)
+			 {
+				 UE_LOG(LogTemp, Warning, TEXT("UBaseSaveGame::SavePlayerCreatureData Creature Name: %s"), *Creature->GetName());
+				 UE_LOG(LogTemp, Warning, TEXT("UBaseSaveGame::SavePlayerCreatureData Creature bPlayerControlling"));
+			 }
 			 D.WorldLocation = Creature->GetActorLocation();
 			 D.Rotation = Creature->GetActorRotation();
 			 D.Faction = Creature->Faction;

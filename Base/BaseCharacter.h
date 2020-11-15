@@ -33,9 +33,6 @@ private:
 	virtual void UseDeputy() override;
 	virtual void MoveForward(float Amount) override;
 	virtual void MoveRight(float Amount) override;
-	virtual void Turn(float Amount) override;
-	virtual void LookUp(float Amount) override;
-
 
 protected:
 	// Called when the game starts or when spawned
