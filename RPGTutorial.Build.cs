@@ -8,7 +8,11 @@ public class RPGTutorial : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "AIModule" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "AIModule"
+            ,"GameplayAbilities"
+            ,"GameplayTags"
+            ,"GameplayTasks"
+        });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
